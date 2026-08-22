@@ -5,8 +5,9 @@ Atelier de création. L'application s'ouvre sur la **Guilde** : bannière, sceau
 trois branches fixes — **Histoires**, **Jeux** et **Expo** — avec catégories imbriquées sans limite,
 projets avec playlist, chronologie verticale, storyboard par éléments.
 
-Les **personas** forment une seule famille de fiches : bande horizontale d'avatars, portrait, attributs
-en tuiles, panneaux thématiques et image de fond couvrant toute la fiche. Le rôle — joué par
+Les **personas** forment une seule famille de fiches, réunies dans un tiroir qui monte au clic de leur
+icône : bande horizontale d'avatars, portrait, attributs en tuiles, panneaux thématiques et image de fond
+couvrant toute la fiche. Le rôle — joué par
 l'utilisateur, ou tenu par l'IA — se choisit sur la fiche, une fois celle-ci créée.
 
 ## Apparence
@@ -99,7 +100,7 @@ animconnect/
     ├── modals.js         groupe, projet, événement, élément, piste, jalon, quête, blason
     └── views/
         ├── guild.js      page d'accueil : la Guilde
-        ├── sheet.js      fiches de personnage : profils et personas IA
+        ├── sheet.js      tiroir des personas : milieux, fiches, rôles
         ├── library.js    branches de projets + page de groupe
         ├── project.js    onglets pistes, éléments, production
         ├── timeline.js   chronologie verticale
@@ -143,8 +144,10 @@ La seule limite est le quota du navigateur, lisible dans la salle Coffre.
 - **En-tête** : l'icône Accueil ramène à la Guilde ; Musique et Paramètres à droite.
 - **Footer** : Histoires, Jeux, Expo, puis Personas tout à droite — ce dernier porte le portrait du
   persona actif.
-- **Personas** : trois bandes — les milieux, leurs sous-groupes, puis les fiches — « + » pour en ouvrir
-  une nouvelle, étoile sur la fiche active, puis la fiche elle-même.
+- **Personas** : ce n'est pas une page mais un **tiroir** qui monte au clic de l'icône, par-dessus la
+  page en cours. Trois bandes — les milieux, leurs sous-groupes, puis les fiches — « + » pour en ouvrir
+  une nouvelle, étoile sur la fiche active, puis la fiche elle-même. Tout s'y fait sans quitter la page :
+  le tiroir se redessine à chaque action, et garde sa position de lecture.
 - **Paramètres** : apparence (thème jour / nuit) et accès à l'IA de l'utilisateur.
 
 ## Les personas

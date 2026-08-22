@@ -282,7 +282,8 @@ export async function mMilieu(id, parentId) {
   const { listMilieux } = await import('./db.js');
   const m = id ? (await listMilieux()).find(x => x.id === id) : null;
   const parent = (m && m.parentId) || parentId || '';
-  modal(`<div class="hd"><h2 style="margin:0">${m ? 'Renommer le milieu' : 'Nouveau milieu'}</h2>${closeBtn}</div>
+  modal(`<div class="hd"><h2 style="margin:0">${m ? 'Renommer le milieu' : 'Nouveau milieu'}</h2><div class="sp"></div>
+    <button class="btn-sm btn-ghost" data-act="backPersonas">Retour</button></div>
     <div class="tiny muted">Un milieu range les personas qui vont ensemble : la guilde,
     une troupe, l'équipe d'un projet, le monde d'une histoire…</div>
     <label class="lbl">Nom du milieu</label>
