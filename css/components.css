@@ -77,11 +77,12 @@ button:disabled, .btn:disabled {
 /* ---------- champs de saisie ---------- */
 input, textarea, select {
   width: 100%;
-  background: var(--surface-2);
+  min-height: 48px;
+  background-color: var(--surface-2);
   color: var(--on-surface);
   border: 1px solid var(--outline-var);
   border-radius: var(--r-sm);
-  padding: 11px 14px;
+  padding: 12px 14px;
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.45;
@@ -93,21 +94,50 @@ input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 1px var(--primary);
-  background: var(--surface-1);
+  background-color: var(--surface-1);
 }
 textarea { resize: vertical; min-height: 84px; }
+/* Menu déroulant : même chevron arrondi que les icônes du site. */
 select {
   appearance: none;
   -webkit-appearance: none;
-  padding-right: 36px;
-  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
-    linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position: calc(100% - 18px) 18px, calc(100% - 13px) 18px;
-  background-size: 5px 5px, 5px 5px;
+  padding-right: 44px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23444746' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 14px center;
+  background-size: 18px 18px;
   background-repeat: no-repeat;
 }
-input[type="color"] { padding: 4px; cursor: pointer; }
-input[type="range"] { border: 0; padding: 0; background: transparent; }
+:root[data-theme="dark"] select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c4c7c5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c4c7c5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); }
+}
+
+/* Sélecteurs natifs de date et d'heure : même teinte que le reste. */
+input[type="date"], input[type="time"], input[type="datetime-local"] { cursor: pointer; }
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  opacity: .7;
+  cursor: pointer;
+  border-radius: var(--r-xs);
+  padding: 2px;
+  transition: opacity var(--motion), background-color var(--motion);
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background: var(--surface-4);
+}
+
+/* Choix de couleur : même hauteur et même arrondi que les autres champs. */
+input[type="color"] { padding: 5px; cursor: pointer; }
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: 0; border-radius: var(--r-xs); }
+input[type="color"]::-moz-color-swatch { border: 0; border-radius: var(--r-xs); }
+
+input[type="range"] { min-height: 0; border: 0; padding: 0; background: transparent; }
+input[type="file"] { padding: 8px; }
 
 label.lbl {
   display: block;
@@ -418,6 +448,13 @@ label.lbl {
 .sheet .hd { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
 .sheet .hd h2 { font-size: 20px; font-weight: 400; }
 
+/* Dans une feuille, les champs se posent sur un ton plus sourd que la feuille
+   elle-même : même famille de surfaces que le reste du site. */
+.sheet input, .sheet textarea, .sheet select { background-color: var(--surface-1); }
+.sheet input:focus, .sheet textarea:focus, .sheet select:focus { background-color: var(--surface); }
+.sheet .rule { margin: 18px 0; }
+.sheet label.lbl:first-of-type { margin-top: 4px; }
+
 /* ---------- grandes options d'un dialogue ---------- */
 .bigopt {
   position: relative;
@@ -446,7 +483,16 @@ label.lbl {
   justify-content: center;
   color: var(--on-primary-container);
 }
-.bigopt .rune b { font-size: 18px; font-weight: 500; }
+.bigopt .rune b { font-size: 18px; font-weight: 500; display: flex; }
+.bigopt .rune b svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .bigopt .disp { font-size: 15px; font-weight: 500; letter-spacing: 0 !important; }
 .bigopt.arcane .rune { background: var(--secondary-container); color: var(--on-secondary-container); }
 
@@ -631,29 +677,6 @@ label.lbl {
 
 .thname { font-size: 14px; font-weight: 500; color: var(--on-surface); }
 .thdesc { font-size: 12px; color: var(--on-surface-var); margin-top: 2px; }
-
-/* ---------- fond d'écran ---------- */
-.wallopt {
-  border: 1px solid var(--outline-var);
-  border-radius: var(--r);
-  overflow: hidden;
-  background: var(--surface);
-}
-:root[data-theme="dark"] .wallopt { background: var(--surface-3); border-color: transparent; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .wallopt { background: var(--surface-3); border-color: transparent; }
-}
-.wallprev {
-  position: relative;
-  height: 168px;
-  background: color-mix(in srgb, var(--on-surface) 6%, transparent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.wallprev img, .wallprev video { width: 100%; height: 100%; object-fit: cover; }
-.wallempty { font-size: 13px; color: var(--on-surface-var); }
-.wallbody { padding: 12px 14px 14px; }
 
 /* ---------- bloc IA ---------- */
 .aihead { align-items: flex-start; gap: 12px; }
