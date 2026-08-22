@@ -277,6 +277,21 @@ export function collectGoalDraft() {
 }
 
 /* ---------- blason de la guilde ---------- */
+/* ---------- milieu d'un persona ---------- */
+export async function mMilieu(id, parentId) {
+  const { listMilieux } = await import('./db.js');
+  const m = id ? (await listMilieux()).find(x => x.id === id) : null;
+  const parent = (m && m.parentId) || parentId || '';
+  modal(`<div class="hd"><h2 style="margin:0">${m ? 'Renommer le milieu' : 'Nouveau milieu'}</h2>${closeBtn}</div>
+    <div class="tiny muted">Un milieu range les personas qui vont ensemble : la guilde,
+    une troupe, l'équipe d'un projet, le monde d'une histoire…</div>
+    <label class="lbl">Nom du milieu</label>
+    <input id="mName" value="${esc(m ? m.name : '')}" placeholder="Guilde, Troupe du Nord, Équipage…">
+    <div class="rule"></div>
+    <div class="row"><button class="btn-ember" data-act="saveMilieu"
+      ${m ? `data-id="${m.id}"` : ''} data-parent="${esc(parent)}">Enregistrer</button></div>`);
+}
+
 export async function mGuild() {
   const { ensureGuild } = await import('./db.js');
   const g = await ensureGuild();

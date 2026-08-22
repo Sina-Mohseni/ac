@@ -1,20 +1,20 @@
 export const S = {
-  view: 'guild',        // guild | tracker | group | project | profiles | personas | music | settings | experience | vault
+  view: 'guild',        // guild | tracker | group | project | personas | music | settings | experience | vault
   groupId: null,
   projectId: null,
   experienceRootId: null,
   activeRootId: null,
   branchMode: null,     // creation | experience
-  personaMode: null,    // user | char
   ptab: 'tracks',       // tracks | timeline | elements | prod
   trackTab: 'library',  // library | cal | goals | vault
   calMonth: new Date(),
   vzoom: 3.2,           // pixels par seconde (vertical)
   follow: true,
   laneFilter: null,
-  /* fiches de personnage */
-  profileId: null,      // fiche utilisateur ouverte
-  personaId: null,      // fiche IA ouverte
+  /* personas */
+  milieuRootId: null,   // milieu racine ouvert : Guilde, Hourglass ou Sphere
+  subMilieuId: null,    // sous-groupe ouvert, ou null pour « tous »
+  personaId: null,      // fiche ouverte
   sheetEdit: false      // la fiche affichée est en édition
 };
 
@@ -47,60 +47,72 @@ export const LANES = [
 export const PIPE = ['Écriture', 'Storyboard', 'Repérage', 'Tournage', 'Montage',
   'Habillage son', 'Étalonnage', 'Export', 'Diffusion'];
 
-/* ---------- fiches de personnage ---------- */
+/* ---------- personas ---------- */
 
-/* Deux familles de fiches : les profils (personas utilisateur) et les personas IA.
-   Même mise en page, vocabulaire et attributs différents. */
-export const KINDS = {
-  user: {
-    key: 'user', store: 'profiles', view: 'profiles',
-    title: 'Profils', sub: 'Fiches des personas utilisateur',
-    one: 'Profil', newName: 'Nouveau profil', accent: '#1e8e3e', rune: 'U',
-    kindLabel: 'Persona utilisateur',
-    gauges: [['Vitalité', 8, 10], ['Énergie', 7, 10], ['Inspiration', 6, 10]],
-    attrs: [['Imagination', 12], ['Rigueur', 10], ['Verbe', 11], ['Rythme', 9], ['Main', 10], ['Souffle', 8]],
-    ident: [
-      ['level', 'Rang', '1'],
-      ['role', 'Classe', 'Conteur · Scénographe'],
-      ['origin', 'Lignée', "Anim'Connect"],
-      ['align', 'Tempérament', 'Ardent et méthodique']
-    ],
-    panels: [
-      ['traits', 'Traits', 'chips', "Un trait par ligne\nPatient\nCurieux"],
-      ['skills', 'Compétences', 'list', 'Un par ligne — « Nom | précision »\nComposition | piano, orchestration'],
-      ['gear', 'Équipement', 'list', 'Un par ligne — « Nom | précision »\nCarnet de croquis | toujours dans le sac'],
-      ['bio', 'Histoire', 'prose', "D'où vient ce profil, ce qu'il cherche…"],
-      ['notes', 'Notes', 'prose', 'Rappels, préférences, méthode de travail…']
-    ]
+/* Un persona est d'abord une fiche ; son rôle se choisit ensuite, sur la
+   fiche elle-même. Trois rôles, dont deux pour l'IA. */
+export const ROLES = [
+  ['user', 'Utilisateur', 'Contrôlé par toi', 'Persona utilisateur'],
+  ['ai-assistant', 'IA · assistant', 'Assistant de création, à tes côtés', 'Persona IA · assistant créateur'],
+  ['ai-living', 'IA · vivant', 'Personnage vivant, pour les expériences', 'Persona IA · vivant']
+];
+
+export const roleOf = r => ROLES.find(x => x[0] === r) || ROLES[0];
+export const isAI = r => String(r || '').startsWith('ai');
+
+/* Les milieux rangent les personas, comme des dossiers. Trois racines
+   fixes ; Hourglass et Sphere accueillent des sous-groupes, créés de
+   toutes pièces ou repris des mondes et des catégories de jeux déjà
+   bâtis dans la Bibliothèque. */
+export const MILIEU_ROOTS = [
+  {
+    id: 'milieu-guilde', key: 'guilde', name: 'Guilde', order: 0, system: true,
+    desc: "Les personas de la guilde Anim'Connect."
   },
-  ai: {
-    key: 'ai', store: 'personas', view: 'personas',
-    title: 'Personas', sub: 'Fiches des personas IA',
-    one: 'Persona', newName: 'Nouveau persona', accent: '#8e6cf1', rune: 'C',
-    kindLabel: 'Persona IA',
-    gauges: [['Charge', 3, 10], ['Contexte', 6, 10], ['Affinité', 8, 10]],
-    attrs: [['Mémoire', 11], ['Précision', 12], ['Style', 10], ['Intuition', 9], ['Portée', 8], ['Constance', 11]],
-    ident: [
-      ['level', 'Rang', '1'],
-      ['role', 'Fonction', 'Dramaturge'],
-      ['origin', 'Origine', 'Extelua'],
-      ['voice', 'Voix', 'Grave, posée'],
-      ['model', 'Moteur', 'À préciser'],
-      ['align', 'Tempérament', 'Franche, exigeante']
-    ],
-    panels: [
-      ['traits', 'Marqueurs de style', 'chips', "Un par ligne\nConcis\nImagé"],
-      ['skills', 'Domaines', 'list', 'Un par ligne — « Nom | précision »\nDramaturgie | structure en cinq actes'],
-      ['gear', 'Outils & accès', 'list', 'Un par ligne — « Nom | précision »\nBibliothèque | lecture des projets'],
-      ['directives', 'Directives', 'prose', 'Ce que ce persona doit toujours faire, et ne jamais faire…'],
-      ['memory', 'Mémoire', 'prose', 'Ce qu\'il retient d\'une session à l\'autre…'],
-      ['bio', 'Histoire', 'prose', "Son passé, son rôle dans l'univers…"],
-      ['notes', 'Notes', 'prose', 'Remarques de conception, essais, réglages…']
-    ]
+  {
+    id: 'milieu-hourglass', key: 'hourglass', name: 'Hourglass', order: 1, system: true,
+    desc: 'Les personas des mondes racontés.',
+    sourceRoot: 'root-histoires', sourceOne: 'monde', sourceMany: 'mondes des Histoires'
+  },
+  {
+    id: 'milieu-sphere', key: 'sphere', name: 'Sphere', order: 2, system: true,
+    desc: 'Les personas des univers de jeu.',
+    sourceRoot: 'root-jeux', sourceOne: 'catégorie', sourceMany: 'catégories des Jeux'
   }
+];
+
+export const MILIEU_GUILDE = MILIEU_ROOTS[0];
+export const milieuRoot = id => MILIEU_ROOTS.find(m => m.id === id) || null;
+
+/* Gabarit d'une fiche. Les entrées marquées « ai » n'apparaissent que
+   pour les personas tenus par l'IA. */
+export const PERSONA = {
+  title: 'Personas', sub: 'Fiches des personas',
+  one: 'Persona', newName: 'Nouveau persona', accent: '#8e6cf1',
+  gauges: [['Vitalité', 8, 10], ['Énergie', 7, 10], ['Inspiration', 6, 10]],
+  attrs: [['Imagination', 12], ['Rigueur', 10], ['Verbe', 11], ['Rythme', 9], ['Main', 10], ['Souffle', 8]],
+  ident: [
+    ['level', 'Rang', '1', 'all'],
+    ['role', 'Fonction', 'Conteur · Scénographe', 'all'],
+    ['origin', 'Origine', "Anim'Connect", 'all'],
+    ['align', 'Tempérament', 'Ardent et méthodique', 'all'],
+    ['voice', 'Voix', 'Grave, posée', 'ai'],
+    ['model', 'Moteur', 'À préciser', 'ai']
+  ],
+  panels: [
+    ['traits', 'Traits', 'chips', 'Un trait par ligne\nPatient\nCurieux', 'all'],
+    ['skills', 'Compétences', 'list', 'Un par ligne — « Nom | précision »\nComposition | piano, orchestration', 'all'],
+    ['gear', 'Équipement', 'list', 'Un par ligne — « Nom | précision »\nCarnet de croquis | toujours dans le sac', 'all'],
+    ['directives', 'Directives', 'prose', 'Ce que ce persona doit toujours faire, et ne jamais faire…', 'ai'],
+    ['memory', 'Mémoire', 'prose', "Ce qu'il retient d'une session à l'autre…", 'ai'],
+    ['bio', 'Histoire', 'prose', "D'où vient ce persona, ce qu'il cherche…", 'all'],
+    ['notes', 'Notes', 'prose', 'Rappels, préférences, méthode de travail…', 'all']
+  ]
 };
 
-export const kindOf = k => KINDS[k] || KINDS.user;
+/* Champs et panneaux retenus pour un rôle donné. */
+export const identFor = role => PERSONA.ident.filter(f => f[3] === 'all' || isAI(role));
+export const panelsFor = role => PERSONA.panels.filter(p => p[4] === 'all' || isAI(role));
 
 /* Rangs de la guilde, du plus modeste au plus haut. */
 export const GUILD_RANKS = [

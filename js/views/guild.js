@@ -1,7 +1,7 @@
-import { all, ensureGuild, assetURL, listChars, getActiveChar } from '../db.js';
+import { all, ensureGuild, assetURL, listPersonas, getActivePersona, listMilieux } from '../db.js';
 import { app, setHead, setStage, charMedallion } from '../ui.js';
 import { esc, today } from '../utils.js';
-import { S, ROOTS, GUILD_RANKS, KINDS } from '../state.js';
+import { S, ROOTS, GUILD_RANKS, PERSONA } from '../state.js';
 
 /* Les quatre salles de la guilde. Ce sont les icônes réclamées :
    elles vivent ici, dans la page, et non plus en tête de l'application. */
@@ -49,10 +49,9 @@ export async function viewGuild() {
     goalsDone, milestonesDone, groups: Math.max(0, groups.length - ROOTS.length)
   });
 
-  const profiles = await listChars('user');
-  const personas = await listChars('ai');
-  const activeUser = await getActiveChar('user');
-  const activeAi = await getActiveChar('ai');
+  const personas = await listPersonas();
+  const milieux = await listMilieux();
+  const activePersona = await getActivePersona();
 
   /* ---------- bannière ---------- */
   const bg = await assetURL(g.bannerAssetId);
@@ -96,7 +95,7 @@ export async function viewGuild() {
   h += `<div class="gstats">
     <div class="gs"><b>${projects.length}</b><span>Projets</span></div>
     <div class="gs"><b>${goals.length}</b><span>Quêtes</span></div>
-    <div class="gs"><b>${profiles.length + personas.length}</b><span>Membres</span></div>
+    <div class="gs"><b>${personas.length}</b><span>Membres</span></div>
     <div class="gs"><b>${assets.length}</b><span>Fichiers</span></div>
   </div>`;
 
@@ -116,20 +115,21 @@ export async function viewGuild() {
       <div class="rune"><svg viewBox="0 0 24 24">${t[3]}</svg></div>
       <div class="pt">${t[1]}</div><div class="pd">${t[2]}</div></div>`).join('') + `</div>`;
 
-  /* ---------- le cercle : profils et personas ---------- */
+  /* ---------- le cercle : les personas, par milieu ---------- */
   h += `<div class="ghead"><h2>Le cercle</h2>
-    <div class="hint">${profiles.length} profil${profiles.length !== 1 ? 's' : ''} · ${personas.length} persona${personas.length !== 1 ? 's' : ''}</div></div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="frt">Profils</div>
-      <div class="roster" style="--acc:${KINDS.user.accent}">`;
-  for (const c of profiles) h += await charMedallion(c, 'user', c.id === activeUser, false);
-  h += await charMedallion(null, 'user', false, true);
-  h += `</div>
-      <div class="frt" style="margin-top:14px">Personas IA</div>
-      <div class="roster" style="--acc:${KINDS.ai.accent}">`;
-  for (const c of personas) h += await charMedallion(c, 'ai', c.id === activeAi, false);
-  h += await charMedallion(null, 'ai', false, true);
-  h += `</div></div>`;
+    <div class="hint">${personas.length} persona${personas.length !== 1 ? 's' : ''} ·
+    ${milieux.length} milieu${milieux.length !== 1 ? 'x' : ''}</div></div>
+    <div class="card" style="margin-bottom:16px">`;
+  for (const m of milieux) {
+    const list = personas.filter(c => (c.milieuId || 'milieu-guilde') === m.id);
+    if (!list.length && m.id !== 'milieu-guilde') continue;
+    h += `<div class="frt">${esc(m.name)}</div>
+      <div class="roster" style="--acc:${PERSONA.accent}">`;
+    for (const c of list) h += await charMedallion(c, c.id === activePersona, false);
+    h += await charMedallion(null, false, true);
+    h += `</div>`;
+  }
+  h += `</div>`;
 
   /* ---------- registre ---------- */
   const pMap = {};

@@ -1,18 +1,18 @@
 import {
   get, put, del, all, byIdx, saveAsset, assetURL,
   deleteGroupTree, isProject, rootForGroup, rootForProject, isRootGroup,
-  saveGuild, putChar, delChar, setActiveChar, getActiveChar, listChars,
-  setWallpaper
+  saveGuild, putPersona, delPersona, setActivePersona, getActivePersona, listPersonas,
+  listMilieux, listSubMilieux, putMilieu, delMilieu, setWallpaper
 } from './db.js';
-import { S, PIPE, ROOTS, rootInfo } from './state.js';
+import { S, PIPE, ROOTS, rootInfo, MILIEU_ROOTS, MILIEU_GUILDE, milieuRoot } from './state.js';
 import { closeModal, modal, opt } from './ui.js';
-import { pickFiles, probeDuration, toast, uid, today } from './utils.js';
+import { pickFiles, probeDuration, toast, uid, today, esc } from './utils.js';
 import { audio, PL, loadQueue, playIndex, seekGlobal, globalTime, stopAll, renderBand } from './player.js';
 import { render, goBack } from './router.js';
 import { viewProject } from './views/project.js';
 import { viewTracker } from './views/tracker.js';
 import {
-  D, mGroup, mProject, mEvent, mElement, mTrack, mCal, mGoal, mGuild, collectGoalDraft
+  D, mGroup, mProject, mEvent, mElement, mTrack, mCal, mGoal, mGuild, mMilieu, collectGoalDraft
 } from './modals.js';
 import {
   CH, blankChar, collectCharDraft, refreshSheet, persistDraft
@@ -30,16 +30,6 @@ function branchDrawer(rootId) {
         `Construire et organiser les projets ${root.name.toLowerCase()}`, `rootpick ${root.key}`) +
       opt('pickBranchMode', `data-root="${root.id}" data-mode="experience"`, '◐', 'Expérience',
         `Vivre et parcourir les projets ${root.name.toLowerCase()}`, `rootpick ${root.key}`));
-}
-
-function personaDrawer() {
-  modal(`<div class="hd"><h2 style="margin:0">Personas</h2><div class="sp"></div>
-      <button class="btn-sm btn-ghost" data-act="closeModal">Fermer</button></div>
-      <div class="tiny muted" style="margin-bottom:12px">Choisis le type de persona à créer.</div>` +
-      opt('pickPersonaMode', 'data-mode="user"', 'U', 'Profils',
-        'Création de user · personas utilisateur', 'personapick user') +
-      opt('pickPersonaMode', 'data-mode="char"', 'C', 'Personas',
-        'Création de char · personas IA', 'personapick char'));
 }
 
 const A = {
@@ -124,16 +114,6 @@ const A = {
   quickCal: () => mCal(today(), false),
 
   /* ---------- types de personas du footer ---------- */
-  personaMode: () => personaDrawer(),
-  pickPersonaMode: async t => {
-    await closeModal();
-    S.activeRootId = null;
-    S.branchMode = null;
-    S.personaMode = t.dataset.mode;
-    S.view = S.personaMode === 'user' ? 'profiles' : 'personas';
-    return render();
-  },
-
   /* ---------- groupes ---------- */
   newGroup: t => mGroup(null, (t && t.dataset.parent) || ''),
   editGroup: t => mGroup(t.dataset.id || S.groupId, null),
@@ -566,26 +546,20 @@ const A = {
   },
 
   /* ---------- fiches : profils utilisateur et personas IA ---------- */
-  newChar: async t => {
-    const kind = t.dataset.kind || CH.kind || 'user';
-    const c = blankChar(kind);
-    await putChar(kind, c);
-    CH.kind = kind;
+  newChar: async () => {
+    const c = blankChar(S.subMilieuId || S.milieuRootId || MILIEU_GUILDE.id);
+    await putPersona(c);
     CH.draft = c;
-    S[kind === 'ai' ? 'personaId' : 'profileId'] = c.id;
-    S.personaMode = kind === 'ai' ? 'char' : 'user';
-    S.view = kind === 'ai' ? 'personas' : 'profiles';
+    S.personaId = c.id;
+    S.view = 'personas';
     S.sheetEdit = true;
     S.activeRootId = null; S.branchMode = null;
-    if (!(await getActiveChar(kind))) await setActiveChar(kind, c.id);
+    if (!(await getActivePersona())) await setActivePersona(c.id);
     return render();
   },
   pickChar: t => {
-    const kind = t.dataset.kind || 'user';
-    CH.kind = kind;
-    S[kind === 'ai' ? 'personaId' : 'profileId'] = t.dataset.id;
-    S.personaMode = kind === 'ai' ? 'char' : 'user';
-    S.view = kind === 'ai' ? 'personas' : 'profiles';
+    S.personaId = t.dataset.id;
+    S.view = 'personas';
     S.sheetEdit = false;
     S.activeRootId = null; S.branchMode = null;
     return render();
@@ -601,70 +575,131 @@ const A = {
     return render();
   },
   activateChar: async t => {
-    await setActiveChar(CH.kind, t.dataset.id);
+    await setActivePersona(t.dataset.id);
     toast('Fiche active');
     return render();
   },
   delCharAsk: async t => {
-    const kind = CH.kind;
     if (!confirm('Supprimer cette fiche ? Cette action est définitive.')) return;
-    await delChar(kind, t.dataset.id);
-    if ((await getActiveChar(kind)) === t.dataset.id) {
-      const rest = await listChars(kind);
-      await setActiveChar(kind, rest.length ? rest[0].id : null);
+    await delPersona(t.dataset.id);
+    if ((await getActivePersona()) === t.dataset.id) {
+      const rest = await listPersonas();
+      await setActivePersona(rest.length ? rest[0].id : null);
     }
-    S[kind === 'ai' ? 'personaId' : 'profileId'] = null;
+    S.personaId = null;
     S.sheetEdit = false;
     return render();
   },
-  pickCharPortrait: () => pickFiles(false, async f => {
+
+  /* ---------- rôle et milieu d'un persona ---------- */
+  setRole: async t => {
     collectCharDraft();
-    CH.draft.portraitAssetId = await saveAsset(f[0]);
-    CH.draft.portraitKind = f[0].type;
+    if (!CH.draft) return;
+    CH.draft.role = t.dataset.r;
     await persistDraft();
-    await refreshSheet();
-    toast('Portrait chargé');
-  }),
-  pickCharBg: () => pickFiles(false, async f => {
+    return render();
+  },
+  setMilieu: async t => {
     collectCharDraft();
-    CH.draft.bgAssetId = await saveAsset(f[0]);
-    CH.draft.bgKind = f[0].type;
+    if (!CH.draft) return;
+    CH.draft.milieuId = t.value;
+    CH.draft.alsoIn = (CH.draft.alsoIn || []).filter(x => x !== t.value);
     await persistDraft();
-    await refreshSheet();
-    const { setStageAsset } = await import('./ui.js');
-    await setStageAsset(CH.draft.bgAssetId, CH.draft.bgKind);
-    toast('Fond de fiche chargé');
-  }),
-  clearCharBg: async () => {
+    toast('Milieu d\'origine mis à jour');
+    return render();
+  },
+  toggleAlsoIn: async t => {
     collectCharDraft();
-    CH.draft.bgAssetId = null;
-    CH.draft.bgKind = '';
+    if (!CH.draft) return;
+    const id = t.dataset.id;
+    const cur = CH.draft.alsoIn || [];
+    CH.draft.alsoIn = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
     await persistDraft();
-    await refreshSheet();
-    const { setStageAsset } = await import('./ui.js');
-    await setStageAsset(null);
+    return render();
   },
-  addAttr: async () => {
-    collectCharDraft();
-    CH.draft.attrs = CH.draft.attrs || [];
-    CH.draft.attrs.push({ label: 'Attribut', value: 10 });
-    return refreshSheet();
+
+  /* ---------- milieux ---------- */
+  pickMilieu: t => {
+    S.milieuRootId = t.dataset.id;
+    S.subMilieuId = null;
+    S.personaId = null;
+    S.sheetEdit = false;
+    S.view = 'personas';
+    return render();
   },
-  delAttr: async t => {
-    collectCharDraft();
-    CH.draft.attrs.splice(+t.dataset.i, 1);
-    return refreshSheet();
+  pickSubMilieu: t => {
+    S.subMilieuId = t.dataset.id || null;
+    S.personaId = null;
+    S.sheetEdit = false;
+    S.view = 'personas';
+    return render();
   },
-  addGauge: async () => {
-    collectCharDraft();
-    CH.draft.gauges = CH.draft.gauges || [];
-    CH.draft.gauges.push({ label: 'Constante', cur: 5, max: 10 });
-    return refreshSheet();
+  /* Un sous-groupe se crée de toutes pièces, ou se reprend d'un monde
+     ou d'une catégorie de jeu déjà bâtis dans la Bibliothèque. */
+  newMilieu: async () => {
+    const root = milieuRoot(S.milieuRootId) || MILIEU_GUILDE;
+    if (!root.sourceRoot) return mMilieu(null, root.id);
+    const groups = (await all('groups')).filter(g => g.parentId === root.sourceRoot);
+    const taken = (await listSubMilieux(root.id)).map(m => m.sourceGroupId).filter(Boolean);
+    const free = groups.filter(g => !taken.includes(g.id));
+    const icon = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+    modal(`<div class="hd"><h2 style="margin:0">Sous-groupe de ${esc(root.name)}</h2><div class="sp"></div>
+      <button class="btn-sm btn-ghost" data-act="closeModal">Fermer</button></div>
+      <div class="tiny muted" style="margin-bottom:12px">${esc(root.desc)}</div>` +
+      opt('newMilieuFree', `data-parent="${root.id}"`,
+        icon('<path d="M12 5v14M5 12h14"/>'), 'Créer un sous-groupe',
+        `Un ${esc(root.sourceOne)} qui n'existe pas encore dans la Bibliothèque`, 'imgpick') +
+      (free.length
+        ? `<div class="frt" style="margin:16px 0 8px">Reprendre des ${esc(root.sourceMany)}</div>` +
+          free.map(g => opt('addMilieuFromGroup', `data-parent="${root.id}" data-id="${g.id}"`,
+            icon('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
+            esc(g.name), esc(g.desc || `Reprendre ce ${root.sourceOne} comme milieu`), 'imgpick arcane')).join('')
+        : `<div class="fnote" style="margin-top:14px">Aucun ${esc(root.sourceOne)} disponible dans la
+           Bibliothèque : tous sont déjà repris, ou il n'y en a pas encore.</div>`));
   },
-  delGauge: async t => {
-    collectCharDraft();
-    CH.draft.gauges.splice(+t.dataset.i, 1);
-    return refreshSheet();
+  newMilieuFree: async t => {
+    await closeModal();
+    return mMilieu(null, t.dataset.parent);
+  },
+  addMilieuFromGroup: async t => {
+    const g = await get('groups', t.dataset.id);
+    if (!g) return;
+    const id = uid();
+    await putMilieu({ id, name: g.name, parentId: t.dataset.parent, sourceGroupId: g.id, at: Date.now() });
+    await closeModal();
+    S.milieuRootId = t.dataset.parent;
+    S.subMilieuId = id;
+    S.personaId = null;
+    S.view = 'personas';
+    toast(`« ${g.name} » ajouté aux milieux`);
+    return render();
+  },
+  editMilieu: t => mMilieu(t.dataset.id || S.subMilieuId, null),
+  saveMilieu: async t => {
+    const id = t.dataset.id || uid();
+    const name = document.getElementById('mName').value.trim() || 'Milieu sans nom';
+    const old = (await listMilieux()).find(m => m.id === id);
+    await putMilieu({
+      ...(old || {}), id, name,
+      parentId: (old && old.parentId) || t.dataset.parent || MILIEU_GUILDE.id,
+      at: (old && old.at) || Date.now()
+    });
+    await closeModal();
+    S.milieuRootId = (old && old.parentId) || t.dataset.parent || S.milieuRootId;
+    S.subMilieuId = id;
+    S.personaId = null;
+    S.view = 'personas';
+    toast('Milieu enregistré');
+    return render();
+  },
+  delMilieuAsk: async t => {
+    if (MILIEU_ROOTS.some(r => r.id === t.dataset.id)) { toast('Ce milieu ne se supprime pas'); return; }
+    if (!confirm('Supprimer ce sous-groupe ? Ses personas remontent au milieu parent.')) return;
+    await delMilieu(t.dataset.id);
+    S.subMilieuId = null;
+    S.personaId = null;
+    toast('Sous-groupe supprimé');
+    return render();
   },
 
   /* ---------- thème jour / nuit ---------- */

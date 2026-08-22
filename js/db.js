@@ -1,8 +1,8 @@
 import { uid } from './utils.js';
-import { ROOTS } from './state.js';
+import { ROOTS, MILIEU_ROOTS, MILIEU_GUILDE } from './state.js';
 
 export const DBN = 'GRIMOIRE_ANIMCONNECT';
-const DBV = 4;
+const DBV = 5;
 let DB = null;
 
 export function openDB() {
@@ -24,7 +24,8 @@ export function openDB() {
       mk('cal', ['date']);
       mk('goals');
       mk('profiles');
-      mk('personas');
+      mk('personas', ['milieuId']);
+      mk('milieux');
       if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv', { keyPath: 'k' });
     };
     r.onsuccess = () => { DB = r.result; res(DB); };
@@ -124,19 +125,102 @@ export async function ensureGuild() {
 
 export const saveGuild = g => put('kv', { ...g, k: 'guild' });
 
-/* ---- fiches de personnage : profils utilisateur et personas IA ---- */
-export const charStore = kind => (kind === 'ai' ? 'personas' : 'profiles');
+/* ---- personas ----------------------------------------------------
+   Une seule famille de fiches. Le rôle (utilisateur, IA assistante,
+   IA vivante) se choisit sur la fiche ; les milieux les rangent.
+   ------------------------------------------------------------------ */
 
-export const listChars = async kind =>
-  (await all(charStore(kind))).sort((a, b) => (a.at || 0) - (b.at || 0));
+export const listPersonas = async milieuId => {
+  const all_ = (await all('personas')).sort((a, b) => (a.at || 0) - (b.at || 0));
+  return milieuId ? all_.filter(c => (c.milieuId || MILIEU_GUILDE.id) === milieuId) : all_;
+};
 
-export const getChar = (kind, id) => get(charStore(kind), id);
-export const putChar = (kind, c) => put(charStore(kind), c);
-export const delChar = (kind, id) => del(charStore(kind), id);
+export const getPersona = id => get('personas', id);
+export const putPersona = c => put('personas', c);
+export const delPersona = id => del('personas', id);
 
-export const activeKey = kind => (kind === 'ai' ? 'active-ai' : 'active-user');
-export const getActiveChar = kind => getKV(activeKey(kind), null);
-export const setActiveChar = (kind, id) => setKV(activeKey(kind), id);
+export const getActivePersona = () => getKV('active-persona', null);
+export const setActivePersona = id => setKV('active-persona', id);
+
+/* ---- milieux : les dossiers des personas ----
+   Trois racines fixes, et des sous-groupes libres sous chacune. */
+export const listMilieux = async () => {
+  const stored = await all('milieux');
+  const roots = MILIEU_ROOTS.map(r => ({ ...r, ...(stored.find(m => m.id === r.id) || {}), system: true }));
+  const subs = stored.filter(m => m.parentId).sort((a, b) => (a.at || 0) - (b.at || 0));
+  return [...roots, ...subs];
+};
+
+export const listSubMilieux = async parentId =>
+  (await all('milieux')).filter(m => m.parentId === parentId).sort((a, b) => (a.at || 0) - (b.at || 0));
+
+export const getMilieu = async id => (await listMilieux()).find(m => m.id === id) || null;
+export const putMilieu = m => put('milieux', m);
+
+/* Personas d'un milieu : ceux qui en viennent, et ceux qui y passent.
+   Un persona rangé ailleurs peut très bien tenir un rôle ici. */
+export async function personasOf(milieuId, withSubs) {
+  const subs = withSubs ? (await listSubMilieux(milieuId)).map(m => m.id) : [];
+  const ids = [milieuId, ...subs];
+  return (await listPersonas()).filter(c =>
+    ids.includes(c.milieuId || MILIEU_GUILDE.id) || (c.alsoIn || []).some(x => ids.includes(x)));
+}
+
+/* Le persona vient-il d'ici, ou n'y est-il qu'invité ? */
+export const isGuestIn = (c, milieuId) => (c.milieuId || MILIEU_GUILDE.id) !== milieuId;
+
+export async function delMilieu(id) {
+  if (MILIEU_ROOTS.some(r => r.id === id)) return false;
+  const sub = await get('milieux', id);
+  const fallback = (sub && sub.parentId) || MILIEU_GUILDE.id;
+  for (const c of await listPersonas()) {
+    let touched = false;
+    if ((c.milieuId || MILIEU_GUILDE.id) === id) { c.milieuId = fallback; touched = true; }
+    if ((c.alsoIn || []).includes(id)) { c.alsoIn = c.alsoIn.filter(x => x !== id); touched = true; }
+    if (touched) await putPersona(c);
+  }
+  await del('milieux', id);
+  return true;
+}
+
+/* Les trois racines existent toujours. */
+export async function ensureMilieux() {
+  for (const r of MILIEU_ROOTS) {
+    const cur = await get('milieux', r.id);
+    await put('milieux', { ...r, ...(cur || {}), id: r.id, name: (cur && cur.name) || r.name, system: true });
+  }
+}
+
+/* Reprise des données d'avant la fusion : les profils rejoignent les
+   personas avec le rôle « utilisateur », les personas d'alors gardent
+   leur rôle d'assistant, et tout le monde entre dans la Guilde. */
+export async function migratePersonas() {
+  if (await getKV('personas-fusionnes', false)) return;
+
+  for (const c of await all('profiles')) {
+    const { kind, ...rest } = c;
+    await put('personas', { ...rest, role: 'user', milieuId: c.milieuId || MILIEU_GUILDE.id });
+    await del('profiles', c.id);
+  }
+  for (const c of await all('personas')) {
+    if (c.role && c.milieuId) continue;
+    const { kind, ...rest } = c;
+    await put('personas', {
+      ...rest,
+      role: c.role || (c.kind === 'user' ? 'user' : 'ai-assistant'),
+      milieuId: c.milieuId || MILIEU_GUILDE.id
+    });
+  }
+
+  /* Une seule fiche active désormais : l'ancienne IA active, sinon l'ancien profil. */
+  if (!(await getKV('active-persona', null))) {
+    const ai = await getKV('active-ai', null);
+    const user = await getKV('active-user', null);
+    const keep = (ai && await get('personas', ai)) ? ai : ((user && await get('personas', user)) ? user : null);
+    if (keep) await setKV('active-persona', keep);
+  }
+  await setKV('personas-fusionnes', true);
+}
 
 /* ---- fichiers : conservés tels quels, sans conversion ni compression ---- */
 export async function saveAsset(file) {

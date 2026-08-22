@@ -1,6 +1,6 @@
-import { assetURL, getOwner, listChars, getActiveChar, getWallpaper } from './db.js';
+import { assetURL, getOwner, listPersonas, getActivePersona, getWallpaper } from './db.js';
 import { esc, fmtT2, fmtSize } from './utils.js';
-import { S, kindOf } from './state.js';
+import { S, PERSONA } from './state.js';
 
 export const app = () => document.getElementById('app');
 const mroot = () => document.getElementById('modalRoot');
@@ -42,7 +42,8 @@ export function setNav(view) {
      gardent l'icône d'accueil allumée. */
   const map = {
     library: 'guild', tracker: 'guild', group: 'guild',
-    project: 'guild', experience: 'guild', vault: 'guild'
+    project: 'guild', experience: 'guild', vault: 'guild',
+    profiles: 'personas'
   };
   const active = map[view] || view;
   document.querySelectorAll('.hnav button').forEach(b => b.classList.toggle('on', b.dataset.view === active));
@@ -146,47 +147,59 @@ export const trackRow = (t, i, playing, owner) =>
     <button class="btn-sm btn-ghost" data-act="mvTrack" data-id="${t.id}" data-owner="${owner}" data-d="1">▼</button>
     <button class="btn-sm btn-ghost" data-act="trackMenu" data-id="${t.id}">⋯</button></div>`;
 
-/* ---- médaillon d'une fiche, utilisé par la bande horizontale ---- */
-export async function charMedallion(c, kind, isActive, isAdd) {
-  const K = kindOf(kind);
+/* ---- médaillon d'un persona, pour la bande horizontale ---- */
+export async function charMedallion(c, isActive, isAdd, isGuest) {
   if (isAdd) {
-    return `<button class="rost add" data-act="newChar" data-kind="${K.key}" title="Créer ${K.one.toLowerCase()}">
-      <span class="ph"><em>+</em></span><span class="rn">${K.newName.split(' ')[0]}</span></button>`;
+    return `<button class="rost add" data-act="newChar" title="Créer un persona">
+      <span class="ph"><em>+</em></span><span class="rn">Nouveau</span></button>`;
   }
   const u = await assetURL(c.portraitAssetId);
-  const opened = (kind === 'ai' ? S.personaId : S.profileId) === c.id;
+  const opened = S.personaId === c.id;
   const media = u
     ? ((c.portraitKind || '').startsWith('video')
       ? `<video src="${u}" muted loop autoplay playsinline></video>`
       : `<img src="${u}" alt="">`)
     : `<em>${esc((c.name || '?').trim().charAt(0).toUpperCase() || '?')}</em>`;
-  return `<button class="rost${opened ? ' on' : ''}" data-act="pickChar" data-kind="${K.key}" data-id="${c.id}"
-      style="--acc:${esc(c.color || K.accent)}" title="${esc(c.name || K.one)}">
-      <span class="ph">${media}${isActive ? '<span class="crown">★</span>' : ''}</span>
-      <span class="rn">${esc(c.name || K.newName)}</span></button>`;
+  return `<button class="rost${opened ? ' on' : ''}" data-act="pickChar" data-id="${c.id}"
+      style="--acc:${esc(c.color || PERSONA.accent)}" title="${esc(c.name || PERSONA.one)}">
+      <span class="ph">${media}${isActive ? '<span class="crown">★</span>' : ''}
+      ${isGuest ? '<span class="guest" title="Invité dans ce milieu">↗</span>' : ''}</span>
+      <span class="rn">${esc(c.name || PERSONA.newName)}</span></button>`;
 }
 
-/* ---- portraits actifs dans le footer ---- */
-export async function refreshCurrents() {
-  for (const kind of ['user', 'ai']) {
-    const btn = document.getElementById(kind === 'ai' ? 'btnCurAi' : 'btnCurUser');
-    if (!btn) continue;
-    const K = kindOf(kind);
-    const id = await getActiveChar(kind);
-    const list = await listChars(kind);
-    const c = list.find(x => x.id === id) || null;
-    const old = btn.querySelector('.av');
-    if (old) old.remove();
-    btn.title = c ? `${K.one} actif : ${c.name}` : `${K.one} actuel`;
-    btn.setAttribute('aria-label', btn.title);
-    btn.classList.toggle('hasav', !!c);
-    if (!c) { btn.style.removeProperty('--acc'); continue; }
-    btn.style.setProperty('--acc', c.color || K.accent);
-    const u = await assetURL(c.portraitAssetId);
-    const av = document.createElement('span');
-    av.className = 'av';
-    av.innerHTML = u ? `<img src="${u}" alt="">`
-      : `<i>${esc((c.name || '?').trim().charAt(0).toUpperCase() || '?')}</i>`;
-    btn.appendChild(av);
+/* ---- médaillon d'un milieu : le dossier où vivent les personas ---- */
+export async function milieuMedallion(m, isCurrent, count, mode) {
+  if (!m) {
+    return `<button class="rost add mil" data-act="newMilieu" title="Ajouter un sous-groupe">
+      <span class="ph"><em>+</em></span><span class="rn">Ajouter</span></button>`;
   }
+  /* « Tous » et les sous-groupes changent de portée ; les racines changent de milieu. */
+  const act = m.parentId || mode === 'all' ? 'pickSubMilieu' : 'pickMilieu';
+  return `<button class="rost mil${isCurrent ? ' on' : ''}" data-act="${act}" data-id="${m.id}"
+      title="${esc(m.name)}">
+      <span class="ph"><em>${esc((m.name || '?').trim().charAt(0).toUpperCase() || '?')}</em>
+      ${count ? `<span class="cnt">${count}</span>` : ''}</span>
+      <span class="rn">${esc(m.name)}</span></button>`;
+}
+
+/* ---- portrait du persona actif dans la barre du bas ---- */
+export async function refreshCurrents() {
+  const btn = document.getElementById('btnCurPersona');
+  if (!btn) return;
+  const id = await getActivePersona();
+  const list = await listPersonas();
+  const c = list.find(x => x.id === id) || null;
+  const old = btn.querySelector('.av');
+  if (old) old.remove();
+  btn.title = c ? `Persona actif : ${c.name}` : 'Personas';
+  btn.setAttribute('aria-label', btn.title);
+  btn.classList.toggle('hasav', !!c);
+  if (!c) { btn.style.removeProperty('--acc'); return; }
+  btn.style.setProperty('--acc', c.color || PERSONA.accent);
+  const u = await assetURL(c.portraitAssetId);
+  const av = document.createElement('span');
+  av.className = 'av';
+  av.innerHTML = u ? `<img src="${u}" alt="">`
+    : `<i>${esc((c.name || '?').trim().charAt(0).toUpperCase() || '?')}</i>`;
+  btn.appendChild(av);
 }

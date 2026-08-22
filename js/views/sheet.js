@@ -1,18 +1,19 @@
 import {
-  listChars, getChar, putChar, getActiveChar, assetURL
+  getPersona, putPersona, getActivePersona, listMilieux, listSubMilieux,
+  personasOf, assetURL
 } from '../db.js';
-import { app, setHead, setStageAsset, charMedallion } from '../ui.js';
+import { app, setHead, setStageAsset, charMedallion, milieuMedallion } from '../ui.js';
 import { esc, uid } from '../utils.js';
-import { S, kindOf } from '../state.js';
+import { S, PERSONA as K, ROLES, roleOf, identFor, panelsFor, MILIEU_ROOTS, MILIEU_GUILDE, milieuRoot } from '../state.js';
 
 /* Fiche en cours d'affichage ou d'édition, partagée avec actions.js */
-export const CH = { kind: 'user', draft: null };
+export const CH = { draft: null };
 
 /* ---------- fabrique d'une fiche vierge ---------- */
-export function blankChar(kind) {
-  const K = kindOf(kind);
+export function blankChar(milieuId) {
   return {
-    id: uid(), kind: K.key, at: Date.now(),
+    id: uid(), at: Date.now(),
+    role: 'user', milieuId: milieuId || MILIEU_GUILDE.id, alsoIn: [],
     name: '', title: '', color: K.accent,
     portraitAssetId: null, portraitKind: '',
     bgAssetId: null, bgKind: '',
@@ -54,9 +55,9 @@ function panelBody(mode, text, ph, edit, id) {
 }
 
 /* ---------- la fiche ---------- */
-export async function ficheHTML(c, kind, edit) {
-  const K = kindOf(kind);
+export async function ficheHTML(c, edit, milieux) {
   const acc = c.color || K.accent;
+  const R = roleOf(c.role);
   const bgU = await assetURL(c.bgAssetId);
   const poU = await assetURL(c.portraitAssetId);
 
@@ -84,11 +85,40 @@ export async function ficheHTML(c, kind, edit) {
            <span class="fnote" style="flex:1">Couleur d'encre de la fiche</span></div>`
       : `<div class="fname">${c.name ? esc(c.name) : `<span class="phv">Sans nom</span>`}</div>
          ${c.title ? `<div class="ftitle">${esc(c.title)}</div>` : `<div class="ftitle phv">Sans épithète</div>`}
-         <div class="fkind">${K.kindLabel}</div>`)}
+         <div class="fkind">${esc(R[3])}</div>`)}
   </div>`;
 
+  /* rôle et milieux : réglables à tout moment, sans passer par l'édition */
+  const mName = id => {
+    const m = (milieux || []).find(x => x.id === id);
+    if (!m) return '—';
+    const par = m.parentId ? (milieux.find(x => x.id === m.parentId) || {}).name : null;
+    return par ? `${par} · ${m.name}` : m.name;
+  };
+  const home = c.milieuId || MILIEU_GUILDE.id;
+  h += fr('', `<div class="frt">Rôle du persona</div>
+    <div class="chips" role="group" aria-label="Rôle du persona">` +
+    ROLES.map(r => `<span class="chip${c.role === r[0] ? ' on' : ''}" data-act="setRole" data-r="${r[0]}"
+      role="button" tabindex="0" title="${esc(r[2])}">${esc(r[1])}</span>`).join('') +
+    `</div>
+    <div class="fnote" style="margin-top:8px">${esc(R[2])}.</div>
+
+    <label class="lbl" for="s_milieu">Milieu d'origine</label>
+    <select id="s_milieu" data-change="setMilieu">` +
+    (milieux || []).map(m => `<option value="${m.id}"${home === m.id ? ' selected' : ''}>${esc(mName(m.id))}</option>`).join('') +
+    `</select>
+
+    <label class="lbl">Tient aussi un rôle dans</label>
+    <div class="chips" role="group" aria-label="Autres milieux">` +
+    (milieux || []).filter(m => m.id !== home).map(m =>
+      `<span class="chip${(c.alsoIn || []).includes(m.id) ? ' on' : ''}" data-act="toggleAlsoIn" data-id="${m.id}"
+        role="button" tabindex="0">${esc(mName(m.id))}</span>`).join('') +
+    `</div>
+    <div class="fnote" style="margin-top:8px">Un persona rangé ici peut très bien être assistant
+    créateur ou personnage vivant ailleurs : choisis les milieux où il doit apparaître.</div>`);
+
   /* identité secondaire : petits cadres rectangulaires */
-  h += `<div class="idgrid">` + K.ident.map(f => fr('idc',
+  h += `<div class="idgrid">` + identFor(c.role).map(f => fr('idc',
     `<div class="il">${f[1]}</div>` + (edit
       ? `<input class="fx mini" id="s_id_${f[0]}" value="${esc((c.ident || {})[f[0]] || '')}" placeholder="${esc(f[2])}">`
       : `<div class="iv">${val((c.ident || {})[f[0]], f[2])}</div>`))).join('') + `</div>`;
@@ -123,7 +153,7 @@ export async function ficheHTML(c, kind, edit) {
     `</div>`);
 
   /* panneaux rectangulaires */
-  for (const p of K.panels) {
+  for (const p of panelsFor(c.role)) {
     h += fr('', `<div class="frt">${p[1]}</div>` +
       panelBody(p[2], (c.panels || {})[p[0]], p[3], edit, 's_p_' + p[0]));
   }
@@ -141,36 +171,77 @@ export async function ficheHTML(c, kind, edit) {
   return h;
 }
 
-/* ---------- vue complète : bande + fiche ---------- */
-async function viewChars(kind) {
-  const K = kindOf(kind);
-  CH.kind = K.key;
-  const list = await listChars(K.key);
-  const activeId = await getActiveChar(K.key);
+/* ---------- vue complète : milieux, sous-groupes, personas, fiche ---------- */
+export async function viewPersonas() {
+  const milieux = await listMilieux();
+  if (!S.milieuRootId || !milieuRoot(S.milieuRootId)) S.milieuRootId = MILIEU_GUILDE.id;
+  const root = milieuRoot(S.milieuRootId);
+  const subs = await listSubMilieux(root.id);
+  if (S.subMilieuId && !subs.some(m => m.id === S.subMilieuId)) S.subMilieuId = null;
 
-  /* fiche ouverte : celle demandée, sinon l'active, sinon la première */
-  const key = K.key === 'ai' ? 'personaId' : 'profileId';
-  let curId = S[key];
+  /* milieu courant : le sous-groupe choisi, sinon la racine et tout ce qu'elle contient */
+  const scopeId = S.subMilieuId || root.id;
+  const list = await personasOf(scopeId, !S.subMilieuId);
+  /* Chez lui dans ce milieu, ou invité depuis un autre ? */
+  const homeIds = [scopeId, ...(S.subMilieuId ? [] : subs.map(m => m.id))];
+  const guest = c => !homeIds.includes(c.milieuId || MILIEU_GUILDE.id);
+  const activeId = await getActivePersona();
+  const scopeName = S.subMilieuId
+    ? `${root.name} · ${(subs.find(m => m.id === S.subMilieuId) || {}).name}`
+    : root.name;
+
+  /* fiche ouverte : celle demandée, sinon l'active, sinon la première du milieu */
+  let curId = S.personaId;
   if (!curId || !list.some(c => c.id === curId)) {
     curId = (list.some(c => c.id === activeId) ? activeId : (list[0] && list[0].id)) || null;
-    S[key] = curId;
+    S.personaId = curId;
     S.sheetEdit = false;
   }
-  const cur = curId ? await getChar(K.key, curId) : null;
+  const cur = curId ? await getPersona(curId) : null;
   CH.draft = cur;
 
-  setHead(K.title, cur ? `${cur.name || K.newName}${cur.id === activeId ? ' · actif' : ''}` : K.sub);
+  setHead(K.title, cur ? `${cur.name || K.newName}${cur.id === activeId ? ' · actif' : ''}`
+    : `${scopeName} · ${K.sub}`);
   await setStageAsset(cur && cur.bgAssetId, cur && cur.bgKind);
 
-  /* bande horizontale de toutes les fiches + création */
-  let h = `<div class="roster" style="--acc:${esc(K.accent)}" aria-label="Fiches ${K.title.toLowerCase()}">`;
-  for (const c of list) h += await charMedallion(c, K.key, c.id === activeId, false);
-  h += await charMedallion(null, K.key, false, true);
+  /* première bande : les trois milieux */
+  let h = `<div class="frt">Milieux</div>
+    <div class="roster" aria-label="Milieux des personas">`;
+  for (const m of MILIEU_ROOTS) {
+    const n = (await personasOf(m.id, true)).length;
+    h += await milieuMedallion(m, m.id === root.id, n);
+  }
+  h += `</div>
+    <div class="fnote" style="margin:-6px 0 14px">${esc(root.desc)}</div>`;
+
+  /* deuxième bande : les sous-groupes de la racine choisie */
+  if (root.sourceRoot || subs.length) {
+    h += `<div class="frt">Sous-groupes de ${esc(root.name)}</div>
+      <div class="roster" aria-label="Sous-groupes">`;
+    h += await milieuMedallion({ id: '', name: 'Tous' }, !S.subMilieuId, 0, 'all');
+    for (const m of subs) {
+      h += await milieuMedallion(m, m.id === S.subMilieuId, (await personasOf(m.id, false)).length);
+    }
+    h += await milieuMedallion(null, false, 0);
+    h += `</div>`;
+    if (S.subMilieuId) {
+      h += `<div class="row wrap" style="margin:-4px 0 12px">
+        <button class="btn-sm btn-ghost" data-act="editMilieu" data-id="${S.subMilieuId}">Renommer</button>
+        <button class="btn-sm btn-ghost btn-danger" data-act="delMilieuAsk" data-id="${S.subMilieuId}">Supprimer</button>
+      </div>`;
+    }
+  }
+
+  /* troisième bande : les personas de ce milieu */
+  h += `<div class="frt">Personas · ${esc(scopeName)}</div>
+    <div class="roster" style="--acc:${esc(K.accent)}" aria-label="Fiches des personas">`;
+  for (const c of list) h += await charMedallion(c, c.id === activeId, false, guest(c));
+  h += await charMedallion(null, false, true);
   h += `</div>`;
 
   if (!cur) {
-    app().innerHTML = h + `<div class="empty card"><span class="disp">Aucun ${K.one.toLowerCase()}</span>
-      Touche le « + » de la bande pour ouvrir une première fiche : portrait, attributs, histoire.</div>`;
+    app().innerHTML = h + `<div class="empty card"><span class="disp">Aucun persona dans ${esc(scopeName)}</span>
+      Touche le « + » de la bande pour ouvrir une première fiche : portrait, rôle, attributs, histoire.</div>`;
     return;
   }
 
@@ -186,18 +257,14 @@ async function viewChars(kind) {
     <button class="btn-sm btn-ghost btn-danger" data-act="delCharAsk" data-id="${cur.id}">Supprimer</button>
   </div>`;
 
-  h += await ficheHTML(cur, K.key, S.sheetEdit);
+  h += await ficheHTML(cur, S.sheetEdit, milieux);
   app().innerHTML = h;
 }
-
-export const viewProfiles = () => viewChars('user');
-export const viewPersonas = () => viewChars('ai');
 
 /* ---------- relève des champs avant tout re-rendu ---------- */
 export function collectCharDraft() {
   const c = CH.draft;
   if (!c) return;
-  const K = kindOf(CH.kind);
   const q = id => document.getElementById(id);
 
   if (q('s_name')) c.name = q('s_name').value.trim();
@@ -205,10 +272,10 @@ export function collectCharDraft() {
   if (q('s_color')) c.color = q('s_color').value;
 
   c.ident = c.ident || {};
-  K.ident.forEach(f => { const el = q('s_id_' + f[0]); if (el) c.ident[f[0]] = el.value.trim(); });
+  identFor(c.role).forEach(f => { const el = q('s_id_' + f[0]); if (el) c.ident[f[0]] = el.value.trim(); });
 
   c.panels = c.panels || {};
-  K.panels.forEach(p => { const el = q('s_p_' + p[0]); if (el) c.panels[p[0]] = el.value; });
+  panelsFor(c.role).forEach(p => { const el = q('s_p_' + p[0]); if (el) c.panels[p[0]] = el.value; });
 
   document.querySelectorAll('[data-gl]').forEach(el => {
     const g = c.gauges[+el.dataset.gl]; if (g) g.label = el.value;
@@ -229,19 +296,18 @@ export function collectCharDraft() {
 
 /* Redessine la fiche sans quitter l'édition (ajout d'attribut, upload…). */
 export async function refreshSheet() {
-  const K = kindOf(CH.kind);
   if (!CH.draft) return;
   const host = document.querySelector('.fiche');
-  if (!host) return viewChars(K.key);
-  host.outerHTML = await ficheHTML(CH.draft, K.key, S.sheetEdit);
+  if (!host) return viewPersonas();
+  host.outerHTML = await ficheHTML(CH.draft, S.sheetEdit, await listMilieux());
 }
-
-export { viewChars };
 
 /* Sauvegarde du brouillon courant. */
 export async function persistDraft() {
   if (!CH.draft) return;
-  CH.draft.kind = CH.kind;
   CH.draft.at = CH.draft.at || Date.now();
-  await putChar(CH.kind, CH.draft);
+  CH.draft.milieuId = CH.draft.milieuId || MILIEU_GUILDE.id;
+  CH.draft.alsoIn = CH.draft.alsoIn || [];
+  CH.draft.role = CH.draft.role || 'user';
+  await putPersona(CH.draft);
 }
