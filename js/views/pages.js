@@ -1,4 +1,4 @@
-import { all, get, rootForGroup, rootForProject, getWallpapers, assetURL } from '../db.js';
+import { all, get, rootForGroup, rootForProject, getWallpaper, assetURL } from '../db.js';
 import { app, setHead, setStage, stat } from '../ui.js';
 import { fmtSize, esc } from '../utils.js';
 import { S, ROOTS, rootInfo } from '../state.js';
@@ -65,19 +65,19 @@ const themeCard = (id, label, desc, cur) => `
     <div class="thdesc">${esc(desc)}</div>
   </div>`;
 
-/* Une carte de fond d'écran (jour ou nuit) avec son aperçu. */
-const wallCard = (theme, label, w, url) => `
+/* La carte du fond d'écran, avec son aperçu. */
+const wallCard = (w, url) => `
   <div class="wallopt">
     <div class="wallprev">${url
       ? ((w.kind || '').startsWith('video')
         ? `<video src="${url}" muted loop autoplay playsinline></video>`
         : `<img src="${url}" alt="">`)
-      : `<span class="wallempty">Aucun fond</span>`}</div>
+      : `<span class="wallempty">Aucun fond d'écran</span>`}</div>
     <div class="wallbody">
-      <div class="wallname">${esc(label)}</div>
-      <div class="row wrap" style="margin-top:8px">
-        <button class="btn-sm" data-act="pickWall" data-theme="${theme}">${url ? 'Remplacer' : 'Choisir une image'}</button>
-        ${url ? `<button class="btn-sm btn-ghost btn-danger" data-act="clearWall" data-theme="${theme}">Retirer</button>` : ''}
+      <div class="row wrap">
+        <button class="btn-sm" data-act="pickWall">${url ? 'Remplacer' : 'Choisir une image ou une vidéo'}</button>
+        ${url ? `<div class="sp"></div>
+          <button class="btn-sm btn-ghost btn-danger" data-act="clearWall">Retirer</button>` : ''}
       </div>
     </div>
   </div>`;
@@ -169,11 +169,8 @@ function aiBlock(cfg) {
 export async function viewSettings() {
   setHead('Paramètres', 'Préférences du grimoire');
   const pref = getTheme();
-  const walls = await getWallpapers();
-  const urls = {
-    light: walls.light && walls.light.assetId ? await assetURL(walls.light.assetId) : null,
-    dark: walls.dark && walls.dark.assetId ? await assetURL(walls.dark.assetId) : null
-  };
+  const wall = await getWallpaper();
+  const wallUrl = wall.assetId ? await assetURL(wall.assetId) : null;
   const cfg = await getAI();
 
   app().innerHTML = `<div class="card" style="margin-bottom:12px">
@@ -185,18 +182,14 @@ export async function viewSettings() {
       ${themeCard('light', 'Jour', 'Fond clair', pref)}
       ${themeCard('dark', 'Nuit', 'Fond sombre', pref)}
     </div>
-    <div class="tiny muted" style="margin-top:10px">Le bouton en haut à droite fait la même bascule
-    depuis n'importe quelle page.</div>
 
     <div class="rule"></div>
 
-    <div class="frt">Fonds d'écran</div>
-    <div class="small muted" style="margin-bottom:12px">Une image ou une vidéo par thème. Elle habille
-    le fond de l'application quand la page n'impose pas déjà le sien (bannière de projet, fond de fiche).</div>
-    <div class="wallgrid">
-      ${wallCard('light', 'Fond de jour', walls.light || {}, urls.light)}
-      ${wallCard('dark', 'Fond de nuit', walls.dark || {}, urls.dark)}
-    </div>
+    <div class="frt">Fond d'écran</div>
+    <div class="small muted" style="margin-bottom:12px">Une image ou une vidéo, la même de jour comme
+    de nuit. Elle occupe tout l'écran, à pleine opacité, quand la page n'impose pas déjà son propre fond
+    (bannière de projet, fond de fiche).</div>
+    ${wallCard(wall, wallUrl)}
   </div>
 
   ${aiBlock(cfg)}

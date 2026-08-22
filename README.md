@@ -14,8 +14,7 @@ toute la fiche.
 L'interface suit les principes de Material 3 (Google) : surfaces à tons, accents tonals, coins
 généreux, ombres douces, typographie Roboto. Deux thèmes complets, **jour** et **nuit**, au choix :
 
-- le bouton de thème en haut à droite fait défiler *automatique → jour → nuit* ;
-- **Paramètres → Apparence** permet de choisir directement ;
+- **Paramètres → Apparence** propose trois cartes : *automatique*, *jour*, *nuit* ;
 - « automatique » suit le réglage jour/nuit du système et réagit à chaud s'il change.
 
 Le choix est retenu dans `localStorage` (clé `ac-theme`) et appliqué avant le premier rendu par un
@@ -23,11 +22,11 @@ court script en tête de `index.html` : pas de clignotement au chargement. Toute
 des variables CSS de `css/base.css` — les anciens noms (`--ember`, `--parch`, `--line`…) restent
 disponibles comme alias des jetons Material.
 
-### Fonds d'écran
+### Fond d'écran
 
-**Paramètres → Apparence** accueille aussi un fond d'écran par thème : une image ou une vidéo pour le
-jour, une autre pour la nuit. Le fichier est rangé tel quel dans le coffre, et le fond suit la bascule
-jour / nuit à chaud. Une page qui impose déjà son propre fond — bannière de projet, image d'une fiche —
+**Paramètres → Apparence** accueille aussi le fond d'écran : une seule image ou vidéo, la même de jour
+comme de nuit. Le fichier est rangé tel quel dans le coffre et **occupe tout l'écran, à pleine opacité**,
+sans voile par-dessus. Une page qui impose déjà son propre fond — bannière de projet, image d'une fiche —
 garde la priorité ; le fond d'écran reprend la main dès qu'on la quitte.
 
 ## Intelligence artificielle (BYOK)
@@ -115,7 +114,7 @@ animconnect/
 | `goals`    | quêtes (étapes ou compteur) | — |
 | `profiles` | fiches de personas utilisateur | — |
 | `personas` | fiches de personas IA | — |
-| `kv`       | blason de la guilde, fiches actives, fonds d'écran (`wallpapers`), réglages d'IA (`ai`) | `k` |
+| `kv`       | blason de la guilde, fiches actives, fond d'écran (`wallpaper`), réglages d'IA (`ai`) | `k` |
 
 Les fichiers sont stockés tels quels : aucun type imposé, aucune conversion, aucune compression.
 La seule limite est le quota du navigateur, lisible dans la salle Coffre.
@@ -126,12 +125,12 @@ La seule limite est le quota du navigateur, lisible dans la salle Coffre.
 - **Guilde** : bannière et blason, sceau de renom calculé sur le contenu réel, quatre plaques vers les
   salles, cercle des profils et personas, registre des jalons, quêtes et projets récents.
 - **Salles** : Bibliothèque, Calendrier, Quêtes et Coffre gardent leur barre d'icônes et un retour Guilde.
-- **En-tête** : l'icône Accueil ramène à la Guilde ; bascule jour / nuit, Musique et Paramètres à droite.
+- **En-tête** : l'icône Accueil ramène à la Guilde ; Musique et Paramètres à droite.
 - **Footer** : profil et persona IA actifs à gauche, avec leur portrait ; Histoires, Jeux, Expo et Personas
   à droite.
 - **Profils / Personas IA** : bande horizontale de toutes les fiches, « + » pour en ouvrir une nouvelle,
   étoile sur la fiche active, puis la fiche elle-même.
-- **Paramètres** : apparence (thème et fond d'écran jour / nuit) et accès à l'IA de l'utilisateur.
+- **Paramètres** : apparence (thème jour / nuit et fond d'écran) et accès à l'IA de l'utilisateur.
 
 ## La fiche de personnage
 

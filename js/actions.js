@@ -17,7 +17,7 @@ import {
 import {
   CH, blankChar, collectCharDraft, refreshSheet, persistDraft
 } from './views/sheet.js';
-import { applyTheme, cycleTheme, themeLabel } from './theme.js';
+import { applyTheme, themeLabel } from './theme.js';
 import { getAI, saveAI, clearAI, listModels, chat, providerOf } from './ai.js';
 import { setAiOut } from './views/pages.js';
 
@@ -635,29 +635,21 @@ const A = {
   },
 
   /* ---------- thème jour / nuit ---------- */
-  theme: () => {
-    toast(`Thème : ${themeLabel(cycleTheme()).toLowerCase()}`);
-    if (S.view === 'settings') return render();
-  },
   setTheme: t => {
-    applyTheme(t.dataset.t);
+    toast(`Thème : ${themeLabel(applyTheme(t.dataset.t)).toLowerCase()}`);
     return render();
   },
 
-  /* ---------- fonds d'écran jour / nuit ---------- */
-  pickWall: t => {
-    const theme = t.dataset.theme === 'dark' ? 'dark' : 'light';
-    pickFiles(false, async f => {
-      const id = await saveAsset(f[0]);
-      await setWallpaper(theme, id, f[0].type);
-      toast(`Fond de ${theme === 'dark' ? 'nuit' : 'jour'} enregistré`);
-      await render();
-    });
-  },
-  clearWall: async t => {
-    const theme = t.dataset.theme === 'dark' ? 'dark' : 'light';
-    await setWallpaper(theme, null);
-    toast(`Fond de ${theme === 'dark' ? 'nuit' : 'jour'} retiré`);
+  /* ---------- fond d'écran ---------- */
+  pickWall: () => pickFiles(false, async f => {
+    const id = await saveAsset(f[0]);
+    await setWallpaper(id, f[0].type);
+    toast("Fond d'écran enregistré");
+    await render();
+  }),
+  clearWall: async () => {
+    await setWallpaper(null);
+    toast("Fond d'écran retiré");
     return render();
   },
 

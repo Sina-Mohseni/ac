@@ -13,14 +13,14 @@
   transition: opacity var(--motion-emph);
 }
 #bgstage.on { opacity: 1; }
-#bgstage video, #bgstage img { width: 100%; height: 100%; object-fit: cover; }
-#bgstage .veil {
+/* Le média occupe tout l'écran, à pleine opacité : aucun voile par-dessus. */
+#bgstage video, #bgstage img {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg,
-    rgba(var(--veil-rgb), .86),
-    rgba(var(--veil-rgb), .93) 45%,
-    rgba(var(--veil-rgb), .98));
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 1;
 }
 
 /* ---------- barre supérieure (top app bar) ---------- */
@@ -116,13 +116,6 @@
   color: var(--on-primary-container);
   background: var(--primary-container);
 }
-
-/* bascule jour / nuit : une seule icône visible à la fois */
-#btnTheme svg { display: none; }
-:root[data-theme-pref="auto"] #btnTheme .ic-auto,
-:root:not([data-theme-pref]) #btnTheme .ic-auto,
-:root[data-theme-pref="light"] #btnTheme .ic-sun,
-:root[data-theme-pref="dark"] #btnTheme .ic-moon { display: block; }
 
 /* titre de page */
 #hdr .hpage { margin-top: 10px; padding-top: 2px; }
