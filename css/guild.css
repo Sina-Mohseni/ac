@@ -38,8 +38,6 @@
   border-radius: var(--r-lg);
   overflow: hidden;
   border: 0;
-  background: var(--primary-container);
-  box-shadow: var(--e1);
 }
 .gcrest img, .gcrest video {
   position: absolute;
@@ -49,20 +47,6 @@
   object-fit: cover;
   transform: none;
 }
-.gcrest b {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: none;
-  font-family: var(--font-sans);
-  font-size: 32px;
-  font-weight: 500;
-  color: var(--on-primary-container);
-  text-shadow: none;
-}
-
 .gname {
   font-family: var(--font-sans);
   font-weight: 400;
@@ -248,3 +232,112 @@
 .ghead { display: flex; align-items: baseline; gap: 12px; margin: 0 0 12px; }
 .ghead h2 { margin: 0; font-size: 18px; font-weight: 400; }
 .ghead .hint { font-size: 13px; color: var(--on-surface-var); flex: 1; text-align: right; }
+
+/* ============================================================
+   PAGE D'ACCUEIL SUR FOND D'ÉCRAN
+   Le fond d'écran reste visible partout : marges, interstices, et
+   à travers chaque bloc, qui devient du verre dépoli. Aucun texte
+   ne touche l'image directement — la lisibilité ne dépend donc
+   jamais de la photo choisie.
+   Les sélecteurs commencent par :root pour passer devant les
+   règles de surface opaque du thème sombre.
+   ============================================================ */
+
+.guildpage { --panel-glass: var(--glass); }
+
+:root .guildpage .ghero,
+:root .guildpage .card,
+:root .guildpage .gstats .gs,
+:root .guildpage .plaque,
+:root .guildpage .ghead {
+  background: var(--panel-glass);
+  border: 1px solid var(--glass-line);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--e1);
+}
+
+/* Sans backdrop-filter, on opacifie : la lisibilité passe avant l'effet. */
+@supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
+  .guildpage { --panel-glass: var(--glass-strong); }
+}
+
+/* ---- bannière ---- */
+:root .guildpage .ghero { border-radius: var(--r-xl); margin-bottom: 18px; }
+.guildpage .ghero .gveil { display: none; }
+/* Le voile ne sert que si une bannière propre a été chargée. */
+.guildpage .ghero .gbg + .gveil { display: block; }
+.guildpage .ghero .gin { padding: 20px 18px 18px; }
+.guildpage .gname { font-size: 30px; }
+.guildpage .gdesc { color: var(--on-surface); opacity: .92; }
+
+/* Le sceau se contente d'un filet : il est déjà sur le verre du hero. */
+.guildpage .gseal { border-top: 1px solid var(--glass-line); }
+.guildpage .gseal .bar { background: var(--glass-hover); }
+
+/* ---- en-tête de section : une barre de verre, jamais de texte nu ---- */
+:root .guildpage .ghead {
+  border-radius: var(--r-full);
+  padding: 8px 18px;
+  margin: 24px 0 14px;
+  align-items: center;
+}
+.guildpage .ghead h2 { font-size: 16px; flex: 0 0 auto; }
+.guildpage .ghead .hint { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 380px) { .guildpage .ghead .hint { display: none; } }
+
+/* ---- chiffres, salles, cartes ---- */
+.guildpage .gstats { gap: 12px; margin-bottom: 4px; }
+:root .guildpage .gstats .gs { padding: 14px 10px; }
+.guildpage .hall { gap: 14px; }
+:root .guildpage .plaque:hover,
+:root .guildpage .plaque:focus-visible {
+  background: var(--glass-strong);
+  box-shadow: var(--e2);
+}
+.guildpage .card { margin-bottom: 14px; }
+.guildpage .reg { border-bottom-color: var(--glass-line); }
+:root .guildpage .reg:hover { background: var(--glass-hover); }
+.guildpage .rost .ph { background: var(--glass-hover); }
+.guildpage .rost.on .ph {
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--acc, var(--primary));
+}
+
+/* ---- cadre du blason : zone d'envoi d'image ---- */
+.gcrest {
+  cursor: pointer;
+  background: var(--glass-hover);
+  box-shadow: inset 0 0 0 1px var(--glass-line);
+  transition: box-shadow var(--motion), transform var(--motion);
+}
+.gcrest:not(.has) { box-shadow: inset 0 0 0 2px var(--primary); }
+.gcrest:hover, .gcrest:focus-visible { transform: translateY(-2px); }
+.gcrest .crestup {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: var(--primary);
+  transition: opacity var(--motion), background-color var(--motion);
+}
+.gcrest .crestup svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.gcrest .crestup b { font-size: 11px; font-weight: 500; letter-spacing: .01em; }
+/* Image en place : le rappel n'apparaît qu'au survol ou au clavier. */
+.gcrest.has .crestup {
+  opacity: 0;
+  color: #fff;
+  background: rgba(0, 0, 0, .55);
+}
+.gcrest.has:hover .crestup,
+.gcrest.has:focus-visible .crestup { opacity: 1; }

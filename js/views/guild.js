@@ -63,10 +63,18 @@ export async function viewGuild() {
     <div class="gveil"></div>
     <div class="gin">
       <div class="row" style="align-items:flex-start;gap:16px">
-        <div class="gcrest">${crest
-          ? ((g.crestKind || '').startsWith('video')
-            ? `<video src="${crest}" muted loop autoplay playsinline></video>` : `<img src="${crest}" alt="">`)
-          : `<b>${esc(g.rune || 'A')}</b>`}</div>
+        <div class="gcrest${crest ? ' has' : ''}" data-act="crestUpload" role="button" tabindex="0"
+          title="${crest ? "Remplacer l'image du blason" : "Ajouter une image de blason"}"
+          aria-label="${crest ? "Remplacer l'image du blason" : "Ajouter une image de blason"}">
+          ${crest
+            ? ((g.crestKind || '').startsWith('video')
+              ? `<video src="${crest}" muted loop autoplay playsinline></video>` : `<img src="${crest}" alt="">`)
+            : ''}
+          <span class="crestup">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V6M8.5 9.5L12 6l3.5 3.5"/>
+              <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+            <b>${crest ? 'Changer' : 'Image'}</b></span>
+        </div>
         <div style="flex:1;min-width:0">
           <div class="gname">${esc(g.name)}</div>
           ${g.motto ? `<div class="gmotto">« ${esc(g.motto)} »</div>` : ''}
@@ -169,5 +177,5 @@ export async function viewGuild() {
     : `<div class="fnote">Rien encore. Passe par la Bibliothèque pour fonder un premier projet.</div>`;
   h += `</div>`;
 
-  app().innerHTML = h;
+  app().innerHTML = `<div class="guildpage">${h}</div>`;
 }
