@@ -5,7 +5,7 @@ import { viewGroup } from './views/library.js';
 import { viewProject } from './views/project.js';
 import { viewTracker } from './views/tracker.js';
 import { viewGuild } from './views/guild.js';
-import { viewProfiles, viewPersonas } from './views/sheet.js';
+import { viewPersonas } from './views/sheet.js';
 import { viewExperience, viewVault, viewMusic, viewSettings } from './views/pages.js';
 
 const VIEWS = {
@@ -13,7 +13,6 @@ const VIEWS = {
   group: viewGroup,
   project: viewProject,
   tracker: viewTracker,
-  profiles: viewProfiles,
   personas: viewPersonas,
   music: viewMusic,
   settings: viewSettings,
@@ -22,8 +21,10 @@ const VIEWS = {
 };
 
 export async function render() {
-  /* « library » n'est plus une vue à part : c'est une salle de la Guilde. */
+  /* « library » n'est plus une vue à part : c'est une salle de la Guilde.
+     « profiles » a fusionné avec les personas. */
   if (S.view === 'library') { S.view = 'tracker'; S.trackTab = 'library'; }
+  if (S.view === 'profiles') S.view = 'personas';
   setNav(S.view);
   const fn = VIEWS[S.view] || viewGuild;
   await fn();

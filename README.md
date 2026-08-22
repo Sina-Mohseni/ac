@@ -5,9 +5,9 @@ Atelier de création. L'application s'ouvre sur la **Guilde** : bannière, sceau
 trois branches fixes — **Histoires**, **Jeux** et **Expo** — avec catégories imbriquées sans limite,
 projets avec playlist, chronologie verticale, storyboard par éléments.
 
-Les **Profils** (personas utilisateur) et les **Personas IA** partagent une même fiche : bande
-horizontale d'avatars, portrait, attributs en tuiles, panneaux thématiques et image de fond couvrant
-toute la fiche.
+Les **personas** forment une seule famille de fiches : bande horizontale d'avatars, portrait, attributs
+en tuiles, panneaux thématiques et image de fond couvrant toute la fiche. Le rôle — joué par
+l'utilisateur, ou tenu par l'IA — se choisit sur la fiche, une fois celle-ci créée.
 
 ## Apparence
 
@@ -107,7 +107,7 @@ animconnect/
         └── pages.js      expérience, musique, paramètres (apparence, fonds, IA), coffre
 ```
 
-## Modèle de données (IndexedDB `GRIMOIRE_ANIMCONNECT`, version 4)
+## Modèle de données (IndexedDB `GRIMOIRE_ANIMCONNECT`, version 5)
 
 | Magasin    | Contenu | Clés utiles |
 |------------|---------|-------------|
@@ -120,9 +120,14 @@ animconnect/
 | `elements` | univers, décors, personnages, objets, sons | `projectId` |
 | `cal`      | jalons du calendrier | `date` |
 | `goals`    | quêtes (étapes ou compteur) | — |
-| `profiles` | fiches de personas utilisateur | — |
-| `personas` | fiches de personas IA | — |
-| `kv`       | blason de la guilde, fiches actives, fond d'écran (`wallpaper`), réglages d'IA (`ai`) | `k` |
+| `personas` | fiches des personas, avec leur rôle, leur milieu d'origine et leurs présences | `milieuId` |
+| `milieux`  | Guilde, Hourglass, Sphere et leurs sous-groupes | `parentId` sur les sous-groupes |
+| `profiles` | ancien magasin des profils, vidé au premier lancement | — |
+| `kv`       | blason de la guilde, persona actif, fond d'écran (`wallpaper`), réglages d'IA (`ai`) | `k` |
+
+Au premier lancement en version 5, les anciennes fiches sont reprises : les profils deviennent des
+personas de rôle « utilisateur », les personas d'alors gardent le rôle « IA · assistant », et tout le
+monde entre dans la Guilde.
 
 Les fichiers sont stockés tels quels : aucun type imposé, aucune conversion, aucune compression.
 La seule limite est le quota du navigateur, lisible dans la salle Coffre.
@@ -136,29 +141,61 @@ La seule limite est le quota du navigateur, lisible dans la salle Coffre.
   fenêtre du blason, soit au fond d'écran, avec leurs retraits.
 - **Salles** : Bibliothèque, Calendrier, Quêtes et Coffre gardent leur barre d'icônes et un retour Guilde.
 - **En-tête** : l'icône Accueil ramène à la Guilde ; Musique et Paramètres à droite.
-- **Footer** : profil et persona IA actifs à gauche, avec leur portrait ; Histoires, Jeux, Expo et Personas
-  à droite.
-- **Profils / Personas IA** : bande horizontale de toutes les fiches, « + » pour en ouvrir une nouvelle,
-  étoile sur la fiche active, puis la fiche elle-même.
+- **Footer** : Histoires, Jeux, Expo, puis Personas tout à droite — ce dernier porte le portrait du
+  persona actif.
+- **Personas** : trois bandes — les milieux, leurs sous-groupes, puis les fiches — « + » pour en ouvrir
+  une nouvelle, étoile sur la fiche active, puis la fiche elle-même.
 - **Paramètres** : apparence (thème jour / nuit) et accès à l'IA de l'utilisateur.
 
-## La fiche de personnage
+## Les personas
 
-Même gabarit pour les deux familles, vocabulaire différent :
+Une seule famille de fiches. Ce n'est plus le type qu'on choisit à la création, mais le **rôle**, sur la
+fiche elle-même, et il peut changer à tout moment :
 
-| Bloc | Profil utilisateur | Persona IA |
-|------|--------------------|------------|
-| Identité | Rang, Classe, Lignée, Tempérament | Rang, Fonction, Origine, Voix, Moteur, Tempérament |
-| Constantes | Vitalité, Énergie, Inspiration | Charge, Contexte, Affinité |
-| Attributs | Imagination, Rigueur, Verbe, Rythme, Main, Souffle | Mémoire, Précision, Style, Intuition, Portée, Constance |
-| Panneaux | Traits, Compétences, Équipement, Histoire, Notes | Marqueurs de style, Domaines, Outils & accès, Directives, Mémoire, Histoire, Notes |
+| Rôle | Ce qu'il est |
+|------|--------------|
+| **Utilisateur** | Contrôlé par toi |
+| **IA · assistant** | Assistant de création, à tes côtés |
+| **IA · vivant** | Personnage vivant, pour les expériences vécues avec l'utilisateur |
+
+Les deux rôles d'IA ouvrent en plus, sur la fiche, les champs **Voix** et **Moteur** et les panneaux
+**Directives** et **Mémoire** — inutiles pour un persona joué par l'utilisateur.
+
+### Les milieux
+
+Les personas se rangent dans des **milieux**, trois racines fixes :
+
+| Milieu | Contenu | Sous-groupes |
+|--------|---------|--------------|
+| **Guilde** | Les personas de la guilde Anim'Connect | libres |
+| **Hourglass** | Les personas des mondes racontés | créés, ou repris des **mondes des Histoires** |
+| **Sphere** | Les personas des univers de jeu | créés, ou repris des **catégories des Jeux** |
+
+Le « + » de la bande des sous-groupes ouvre un tiroir : créer un sous-groupe de toutes pièces, ou
+reprendre un monde ou une catégorie déjà bâtis dans la Bibliothèque — le sous-groupe garde alors le lien
+vers son groupe d'origine.
+
+**Un persona n'est pas enfermé dans son milieu.** Sa fiche porte un *milieu d'origine* et une liste
+« tient aussi un rôle dans » : il apparaît dans ces milieux-là aussi, marqué d'un ↗, et peut donc être
+assistant créateur ici et personnage vivant ailleurs. Supprimer un sous-groupe ne supprime personne : ses
+personas remontent au milieu parent.
+
+## La fiche
+
+| Bloc | Contenu |
+|------|---------|
+| Identité | Rang, Fonction, Origine, Tempérament — plus Voix et Moteur pour les rôles d'IA |
+| Constantes | Vitalité, Énergie, Inspiration |
+| Attributs | Imagination, Rigueur, Verbe, Rythme, Main, Souffle |
+| Panneaux | Traits, Compétences, Équipement, Histoire, Notes — plus Directives et Mémoire pour les rôles d'IA |
 
 Constantes et attributs s'ajoutent et se retirent librement. Le portrait occupe un cadre carré ;
 l'image de fond couvre toute la fiche et se prolonge derrière l'application. La couleur d'encre de la
 fiche colore ses cadres, ses jauges et son médaillon dans la bande.
 
 Édition : le bouton **Modifier la fiche** transforme chaque cadre en champ, à la même place. La mise en
-page de création et la mise en page de lecture sont donc la même.
+page de création et la mise en page de lecture sont donc la même. Le rôle et les milieux, eux, se règlent
+sans passer par l'édition.
 
 ## À faire ensuite
 
