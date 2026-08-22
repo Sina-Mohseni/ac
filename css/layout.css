@@ -1,0 +1,289 @@
+/* ============================================================
+   STRUCTURE — scène de fond, barre supérieure, barre de
+   navigation inférieure, lecteur flottant.
+   ============================================================ */
+
+/* ---------- scène de fond plein écran ---------- */
+#bgstage {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity var(--motion-emph);
+}
+#bgstage.on { opacity: 1; }
+#bgstage video, #bgstage img { width: 100%; height: 100%; object-fit: cover; }
+#bgstage .veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(var(--veil-rgb), .86),
+    rgba(var(--veil-rgb), .93) 45%,
+    rgba(var(--veil-rgb), .98));
+}
+
+/* ---------- barre supérieure (top app bar) ---------- */
+#hdr {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: calc(var(--hdr-pad) + env(safe-area-inset-top, 0)) 12px 10px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--motion), background-color var(--motion);
+}
+#hdr .hbar, #hdr .hpage { width: 100%; max-width: 1000px; margin-inline: auto; }
+#hdr .hbar { display: flex; align-items: center; gap: 8px; }
+
+#hdr .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  color: var(--on-surface);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: .02em;
+}
+#hdr .sigil { width: 28px; height: 28px; flex: 0 0 auto; color: var(--primary); }
+#hdr .sub {
+  font-size: 13px;
+  color: var(--on-surface-var);
+  letter-spacing: .01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* boutons icône — pastilles Material */
+.hnav { display: flex; gap: 4px; margin: 0; overflow-x: auto; scrollbar-width: none; }
+.hnav-home, .hnav-tools { flex: 0 0 auto; }
+.hnav::-webkit-scrollbar { display: none; }
+
+.hnav button,
+.fnav button {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-full);
+  padding: 0;
+  color: var(--on-surface-var);
+  cursor: pointer;
+  overflow: hidden;
+  transition: color var(--motion), background-color var(--motion);
+}
+.hnav button::before,
+.fnav button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity var(--motion);
+}
+.hnav button:hover::before,
+.fnav button:hover::before { opacity: var(--state-hover); }
+.hnav button:active::before,
+.fnav button:active::before { opacity: var(--state-press); }
+
+.hnav button svg,
+.fnav button svg {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* état actif : pastille tonale, l'indicateur Material */
+.hnav button.on,
+.fnav button.on {
+  color: var(--on-primary-container);
+  background: var(--primary-container);
+}
+
+/* bascule jour / nuit : une seule icône visible à la fois */
+#btnTheme svg { display: none; }
+:root[data-theme-pref="auto"] #btnTheme .ic-auto,
+:root:not([data-theme-pref]) #btnTheme .ic-auto,
+:root[data-theme-pref="light"] #btnTheme .ic-sun,
+:root[data-theme-pref="dark"] #btnTheme .ic-moon { display: block; }
+
+/* titre de page */
+#hdr .hpage { margin-top: 10px; padding-top: 2px; }
+#hdr .hpage h1 { font-size: 26px; color: var(--on-surface); }
+#hdr .hpage .sub { margin-top: 2px; }
+
+@media (max-width: 400px) {
+  #hdr .brand span { display: none; }
+  #hdr .hpage h1 { font-size: 22px; }
+}
+
+/* ---------- contenu ---------- */
+main {
+  padding: 16px 16px calc(var(--foot) + 40px);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+body.playing main { padding-bottom: calc(var(--foot) + var(--play) + 44px); }
+
+/* ---------- barre de navigation inférieure ---------- */
+#ftr {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0));
+  background: color-mix(in srgb, var(--surface-2) 92%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-top: 1px solid var(--outline-var);
+}
+#ftr .fbar {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fnav { display: flex; gap: 4px; align-items: center; }
+
+/* chaque famille de branches garde sa teinte */
+.fnav-roots button[data-root="root-histoires"].on {
+  color: var(--on-secondary-container);
+  background: var(--secondary-container);
+}
+.fnav-roots button[data-root="root-expo"].on {
+  color: var(--on-tertiary-container);
+  background: var(--tertiary-container);
+}
+
+@media (max-width: 400px) {
+  .fnav { gap: 2px; }
+  .fnav button { width: 38px; flex-basis: 38px; }
+}
+
+/* ---------- lecteur flottant ---------- */
+#player {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(env(safe-area-inset-bottom, 0) + var(--foot) + 10px);
+  z-index: 45;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  display: none;
+  background: var(--surface-3);
+  box-shadow: var(--e3);
+}
+#player.on { display: block; }
+@media (min-width: 760px) {
+  #player { left: auto; right: 16px; width: 420px; }
+}
+#player .bandmedia { position: absolute; inset: 0; opacity: .35; }
+#player .bandmedia video, #player .bandmedia img { width: 100%; height: 100%; object-fit: cover; }
+#player .bandveil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(var(--veil-rgb), .96), rgba(var(--veil-rgb), .78));
+}
+#player .inner { position: relative; padding: 10px 12px 8px; }
+#player .row { gap: 6px; }
+
+.pbtn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  border-radius: var(--r-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pbtn svg { width: 18px; height: 18px; fill: currentColor; stroke: none; }
+.pbtn.btn-ember svg { fill: var(--on-primary); }
+
+/* piste de lecture — curseur Material */
+#seek {
+  width: 100%;
+  height: 20px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  margin: 4px 0 0;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+#seek::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: var(--r-full);
+  background: linear-gradient(90deg,
+    var(--primary) var(--p, 0%),
+    color-mix(in srgb, var(--on-surface-var) 30%, transparent) 0);
+}
+#seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 0;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 20%, transparent);
+  transition: box-shadow var(--motion);
+}
+#seek:hover::-webkit-slider-thumb,
+#seek:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+#seek::-moz-range-track {
+  height: 4px;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--on-surface-var) 30%, transparent);
+}
+#seek::-moz-range-progress { height: 4px; border-radius: var(--r-full); background: var(--primary); }
+#seek::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 50%; background: var(--primary); }
+#seek:focus-visible { outline-offset: 4px; }
+
+/* ---------- portraits actifs dans la barre inférieure ---------- */
+.fnav-current button { position: relative; overflow: hidden; }
+.fnav-current button.hasav { color: var(--acc, var(--primary)); }
+.fnav-current button .av {
+  position: absolute;
+  inset: 3px;
+  border-radius: var(--r-full);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-3);
+}
+.fnav-current button .av img { width: 100%; height: 100%; object-fit: cover; }
+.fnav-current button .av i {
+  font-style: normal;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--acc, var(--primary));
+}
+.fnav-current button.hasav.on {
+  background: var(--primary-container);
+  box-shadow: inset 0 0 0 2px var(--acc, var(--primary));
+}

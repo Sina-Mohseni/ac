@@ -1,0 +1,250 @@
+/* ============================================================
+   PAGE GUILDE — l'accueil
+   Bannière, sceau de renom, chiffres, les quatre salles,
+   le cercle des personas et le registre.
+   ============================================================ */
+
+/* ---------- bannière ---------- */
+.ghero {
+  position: relative;
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  border: 1px solid var(--outline-var);
+  background: var(--surface-1);
+  margin-bottom: 16px;
+  box-shadow: var(--e1);
+}
+:root[data-theme="dark"] .ghero { border-color: transparent; background: var(--surface-2); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ghero { border-color: transparent; background: var(--surface-2); }
+}
+.ghero .gbg { position: absolute; inset: 0; }
+.ghero .gbg img, .ghero .gbg video { width: 100%; height: 100%; object-fit: cover; }
+.ghero .gveil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 120% at 12% 0%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 62%),
+    linear-gradient(180deg, rgba(var(--veil-rgb), .84), rgba(var(--veil-rgb), .93) 58%, rgba(var(--veil-rgb), .98));
+}
+.ghero .gin { position: relative; padding: 22px 20px 20px; }
+
+/* blason : carré doux, plus de losange */
+.gcrest {
+  width: 76px;
+  height: 76px;
+  flex: 0 0 auto;
+  position: relative;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  border: 0;
+  background: var(--primary-container);
+  box-shadow: var(--e1);
+}
+.gcrest img, .gcrest video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: none;
+}
+.gcrest b {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: none;
+  font-family: var(--font-sans);
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--on-primary-container);
+  text-shadow: none;
+}
+
+.gname {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+  color: var(--on-surface);
+  text-shadow: none;
+}
+.gmotto {
+  font-size: 15px;
+  font-style: italic;
+  color: var(--primary);
+  margin-top: 6px;
+}
+.gdesc { font-size: 14px; color: var(--on-surface-var); margin-top: 10px; max-width: 62ch; }
+
+/* sceau de renom */
+.gseal {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--outline-var);
+}
+.gseal .sig {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  position: relative;
+  border: 0;
+  background: var(--primary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 20px;
+  color: var(--on-primary-container);
+}
+.gseal .sig::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--primary) 40%, transparent);
+}
+.gseal .rank { font-size: 15px; font-weight: 500; color: var(--on-surface); }
+.gseal .xp { font-size: 12px; color: var(--on-surface-var); font-family: var(--font-mono); margin-top: 3px; }
+.gseal .bar { margin-top: 8px; }
+
+/* ---------- bandeau de chiffres ---------- */
+.gstats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+@media (min-width: 520px) { .gstats { grid-template-columns: repeat(4, 1fr); } }
+.gstats .gs {
+  border: 1px solid var(--outline-var);
+  border-radius: var(--r);
+  padding: 16px 12px;
+  text-align: center;
+  background: var(--surface-1);
+}
+:root[data-theme="dark"] .gstats .gs { border-color: transparent; background: var(--surface-2); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .gstats .gs { border-color: transparent; background: var(--surface-2); }
+}
+.gstats .gs b {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--primary);
+  line-height: 1.1;
+}
+.gstats .gs span {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .01em;
+  text-transform: none;
+  color: var(--on-surface-var);
+  margin-top: 6px;
+}
+
+/* ---------- les quatre salles ---------- */
+.hall { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+@media (min-width: 620px) { .hall { grid-template-columns: repeat(4, 1fr); } }
+.plaque {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid var(--outline-var);
+  border-radius: var(--r);
+  padding: 20px 14px 16px;
+  text-align: center;
+  background: var(--surface-1);
+  transition: background-color var(--motion), box-shadow var(--motion), border-color var(--motion);
+}
+:root[data-theme="dark"] .plaque { border-color: transparent; background: var(--surface-2); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .plaque { border-color: transparent; background: var(--surface-2); }
+}
+.plaque:hover, .plaque:focus-visible { box-shadow: var(--e2); background: var(--surface-2); }
+:root[data-theme="dark"] .plaque:hover { background: var(--surface-3); }
+.plaque .rune {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--primary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--motion);
+}
+.plaque:hover .rune { transform: translateY(-2px); }
+.plaque .rune svg {
+  width: 22px;
+  height: 22px;
+  transform: none;
+  stroke: var(--on-primary-container);
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.plaque .pt {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--on-surface);
+}
+.plaque .pd { font-size: 12px; color: var(--on-surface-var); margin-top: 4px; line-height: 1.4; }
+.plaque .pn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--on-primary-container);
+  background: var(--primary-container);
+  border-radius: var(--r-full);
+  padding: 2px 9px;
+  opacity: 1;
+}
+
+/* ---------- registre ---------- */
+.reg {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+  margin: 0 -8px;
+  border-radius: var(--r-xs);
+  border-bottom: 1px solid var(--outline-var);
+  cursor: pointer;
+  transition: background-color var(--motion);
+}
+.reg:hover { background: var(--surface-2); }
+:root[data-theme="dark"] .reg:hover { background: var(--surface-3); }
+.reg:last-child { border-bottom: 0; }
+.reg .rd {
+  width: 56px;
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary);
+}
+.reg .rt { flex: 1; min-width: 0; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reg .rs { font-size: 12px; color: var(--on-surface-var); letter-spacing: 0; }
+
+/* ---------- en-tête de section ---------- */
+.ghead { display: flex; align-items: baseline; gap: 12px; margin: 0 0 12px; }
+.ghead h2 { margin: 0; font-size: 18px; font-weight: 400; }
+.ghead .hint { font-size: 13px; color: var(--on-surface-var); flex: 1; text-align: right; }

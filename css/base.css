@@ -1,0 +1,304 @@
+/* ============================================================
+   ANIM'CONNECT · SYSTÈME DE DESIGN
+   Inspiration Material 3 / Google : surfaces à tons, couleurs
+   d'accent tonales, coins généreux, ombres douces.
+   Deux thèmes : clair (jour) et sombre (nuit), au choix,
+   avec suivi automatique du système par défaut.
+   ============================================================ */
+
+/* ---------- 1. Jetons de thème : JOUR (par défaut) ---------- */
+:root {
+  color-scheme: light;
+
+  /* accent principal — bleu Google */
+  --primary: #0b57d0;
+  --on-primary: #ffffff;
+  --primary-container: #d3e3fd;
+  --on-primary-container: #041e49;
+  --primary-hover: #0842a0;
+
+  /* accent secondaire — violet, branche « Histoires » */
+  --secondary: #6750a4;
+  --on-secondary: #ffffff;
+  --secondary-container: #e6deff;
+  --on-secondary-container: #21005d;
+
+  /* accent tertiaire — vert, profils & réussite */
+  --tertiary: #146c2e;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #c4eed0;
+  --on-tertiary-container: #072711;
+
+  /* erreur */
+  --error: #b3261e;
+  --on-error: #ffffff;
+  --error-container: #fce8e6;
+  --on-error-container: #410e0b;
+
+  /* surfaces à tons */
+  --bg: #f8fafd;
+  --surface: #ffffff;
+  --surface-1: #f7f9fc;
+  --surface-2: #f0f4f9;
+  --surface-3: #e9eef6;
+  --surface-4: #dde3ea;
+  --on-surface: #1f1f1f;
+  --on-surface-var: #444746;
+  --outline: #747775;
+  --outline-var: #c4c7c5;
+
+  --inverse-surface: #303030;
+  --on-inverse-surface: #f2f2f2;
+  --inverse-primary: #a8c7fa;
+
+  /* voile posé sur les médias : la couleur de fond du thème */
+  --veil-rgb: 255, 255, 255;
+
+  /* ombres Material */
+  --e1: 0 1px 2px rgba(0,0,0,.10), 0 1px 3px 1px rgba(0,0,0,.06);
+  --e2: 0 1px 2px rgba(0,0,0,.10), 0 2px 6px 2px rgba(0,0,0,.07);
+  --e3: 0 1px 3px rgba(0,0,0,.10), 0 4px 8px 3px rgba(0,0,0,.08);
+  --e4: 0 2px 3px rgba(0,0,0,.12), 0 6px 10px 4px rgba(0,0,0,.10);
+
+  /* couche d'état (survol / appui) */
+  --state-hover: .08;
+  --state-press: .12;
+}
+
+/* ---------- 2. Jetons de thème : NUIT ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --primary: #a8c7fa;
+    --on-primary: #062e6f;
+    --primary-container: #0842a0;
+    --on-primary-container: #d3e3fd;
+    --primary-hover: #c7dbff;
+
+    --secondary: #d0bcff;
+    --on-secondary: #381e72;
+    --secondary-container: #4f378b;
+    --on-secondary-container: #e9ddff;
+
+    --tertiary: #6dd58c;
+    --on-tertiary: #003916;
+    --tertiary-container: #0a5223;
+    --on-tertiary-container: #c4eed0;
+
+    --error: #f2b8b5;
+    --on-error: #601410;
+    --error-container: #8c1d18;
+    --on-error-container: #f9dedc;
+
+    --bg: #131314;
+    --surface: #131314;
+    --surface-1: #1b1b1b;
+    --surface-2: #1e1f20;
+    --surface-3: #282a2c;
+    --surface-4: #333438;
+    --on-surface: #e3e3e3;
+    --on-surface-var: #c4c7c5;
+    --outline: #8e918f;
+    --outline-var: #444746;
+
+    --inverse-surface: #e3e3e3;
+    --on-inverse-surface: #303030;
+    --inverse-primary: #0b57d0;
+
+    --veil-rgb: 19, 19, 20;
+
+    --e1: 0 1px 2px rgba(0,0,0,.35), 0 1px 3px 1px rgba(0,0,0,.20);
+    --e2: 0 1px 2px rgba(0,0,0,.40), 0 2px 6px 2px rgba(0,0,0,.24);
+    --e3: 0 1px 3px rgba(0,0,0,.45), 0 4px 8px 3px rgba(0,0,0,.28);
+    --e4: 0 2px 3px rgba(0,0,0,.50), 0 6px 10px 4px rgba(0,0,0,.32);
+
+    --state-hover: .10;
+    --state-press: .16;
+  }
+}
+
+/* choix explicite « nuit » : identique, mais prioritaire sur le système */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --primary: #a8c7fa;
+  --on-primary: #062e6f;
+  --primary-container: #0842a0;
+  --on-primary-container: #d3e3fd;
+  --primary-hover: #c7dbff;
+
+  --secondary: #d0bcff;
+  --on-secondary: #381e72;
+  --secondary-container: #4f378b;
+  --on-secondary-container: #e9ddff;
+
+  --tertiary: #6dd58c;
+  --on-tertiary: #003916;
+  --tertiary-container: #0a5223;
+  --on-tertiary-container: #c4eed0;
+
+  --error: #f2b8b5;
+  --on-error: #601410;
+  --error-container: #8c1d18;
+  --on-error-container: #f9dedc;
+
+  --bg: #131314;
+  --surface: #131314;
+  --surface-1: #1b1b1b;
+  --surface-2: #1e1f20;
+  --surface-3: #282a2c;
+  --surface-4: #333438;
+  --on-surface: #e3e3e3;
+  --on-surface-var: #c4c7c5;
+  --outline: #8e918f;
+  --outline-var: #444746;
+
+  --inverse-surface: #e3e3e3;
+  --on-inverse-surface: #303030;
+  --inverse-primary: #0b57d0;
+
+  --veil-rgb: 19, 19, 20;
+
+  --e1: 0 1px 2px rgba(0,0,0,.35), 0 1px 3px 1px rgba(0,0,0,.20);
+  --e2: 0 1px 2px rgba(0,0,0,.40), 0 2px 6px 2px rgba(0,0,0,.24);
+  --e3: 0 1px 3px rgba(0,0,0,.45), 0 4px 8px 3px rgba(0,0,0,.28);
+  --e4: 0 2px 3px rgba(0,0,0,.50), 0 6px 10px 4px rgba(0,0,0,.32);
+
+  --state-hover: .10;
+  --state-press: .16;
+}
+
+/* ---------- 3. Alias historiques ----------
+   Le JavaScript compose encore des styles en ligne avec ces noms
+   (var(--ember), var(--parch)…). Ils pointent désormais sur les
+   jetons Material : aucune vue à réécrire. */
+:root {
+  --ember: var(--primary);
+  --ember-hot: var(--primary-hover);
+  --arcane: var(--secondary);
+  --arcane-hot: var(--secondary);
+  --blood: var(--error);
+  --ok: var(--tertiary);
+  --parch: var(--on-surface);
+  --mist: var(--on-surface-var);
+  --ink: var(--bg);
+  --ink2: var(--surface-1);
+  --panel: var(--surface-1);
+  --panel2: var(--surface-2);
+  --line: var(--outline-var);
+  --line2: var(--outline);
+  --grad-ember: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  --grad-arcane: linear-gradient(135deg, var(--secondary), var(--secondary));
+
+  /* formes & mesures */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r: 16px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-full: 999px;
+  --play: 68px;
+  --foot: 72px;
+  --gut: 56px;
+  --hdr-pad: 10px;
+
+  /* typographie */
+  --font-sans: "Google Sans", "Google Sans Text", Roboto, system-ui, -apple-system,
+    "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --motion: 200ms cubic-bezier(.2, 0, 0, 1);
+  --motion-emph: 280ms cubic-bezier(.2, 0, 0, 1);
+}
+
+/* ---------- 4. Réinitialisation ---------- */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--on-surface);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: .01em;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background-color var(--motion), color var(--motion);
+}
+
+/* voile ambiant très discret : deux halos tonals, pas de texture */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  background:
+    radial-gradient(1100px 620px at 8% -12%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 62%),
+    radial-gradient(900px 560px at 96% 4%, color-mix(in srgb, var(--secondary) 9%, transparent), transparent 60%),
+    var(--bg);
+}
+
+/* ---------- 5. Typographie ---------- */
+h1, h2, h3, .disp {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: 0;
+  margin: 0;
+}
+h1 {
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+h2 {
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--on-surface);
+  margin: 0 0 12px;
+}
+h3 { font-size: 14px; line-height: 1.4; }
+.disp { font-size: 16px; }
+
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.muted { color: var(--on-surface-var); }
+.small { font-size: 13px; }
+.tiny { font-size: 12px; }
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------- 6. Utilitaires de mise en page ---------- */
+.row { display: flex; gap: 8px; align-items: center; }
+.wrap { flex-wrap: wrap; }
+.sp { flex: 1; }
+.rule { height: 1px; background: var(--outline-var); border: 0; margin: 16px 0; opacity: .8; }
+
+/* ---------- 7. Accessibilité ---------- */
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+::selection { background: var(--primary-container); color: var(--on-primary-container); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--outline-var);
+  border-radius: var(--r-full);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--outline); background-clip: content-box; }
+* { scrollbar-width: thin; scrollbar-color: var(--outline-var) transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
