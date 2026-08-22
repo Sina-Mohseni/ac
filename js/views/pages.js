@@ -1,8 +1,9 @@
-import { all, get, rootForGroup, rootForProject } from '../db.js';
+import { all, get, rootForGroup, rootForProject, getWallpapers, assetURL } from '../db.js';
 import { app, setHead, setStage, stat } from '../ui.js';
 import { fmtSize, esc } from '../utils.js';
 import { S, ROOTS, rootInfo } from '../state.js';
-import { THEMES, getTheme, resolvedTheme } from '../theme.js';
+import { getTheme, resolvedTheme } from '../theme.js';
+import { PROVIDERS, providerOf, suggestedModels, getAI, maskKey } from '../ai.js';
 
 /* Les fiches de profil et de persona vivent dans views/sheet.js. */
 
@@ -54,29 +55,158 @@ export async function viewMusic() {
 }
 
 /* ---------- Paramètres ---------- */
-export async function viewSettings() {
-  setHead('Paramètres', 'Préférences du grimoire');
-  await setStage(null);
-  const pref = getTheme();
-  app().innerHTML = `<div class="card" style="margin-bottom:12px">
-    <h2>Apparence</h2>
-    <div class="small muted">Choisis le mode d'affichage. « Automatique » suit le réglage
-    jour / nuit de ton appareil — actuellement <b>${resolvedTheme() === 'dark' ? 'nuit' : 'jour'}</b>.</div>
-    <div class="row wrap" style="margin-top:14px">` +
-    THEMES.map(t => `<span class="chip${pref === t[0] ? ' on' : ''}" data-act="setTheme" data-t="${t[0]}"
-      role="button" tabindex="0" title="${esc(t[2])}">${esc(t[1])}</span>`).join('') +
-    `</div>
-    <div class="tiny muted" style="margin-top:10px">Le bouton en haut à droite fait la même bascule
-    depuis n'importe quelle page.</div>
+
+/* Une carte de choix de thème, avec son aperçu miniature. */
+const themeCard = (id, label, desc, cur) => `
+  <div class="thopt${cur === id ? ' on' : ''}" data-act="setTheme" data-t="${id}" role="button" tabindex="0"
+    aria-pressed="${cur === id}" title="${esc(desc)}">
+    <div class="thprev th-${id}"><i class="thbar"></i><i class="thline"></i><i class="thline short"></i></div>
+    <div class="thname">${esc(label)}</div>
+    <div class="thdesc">${esc(desc)}</div>
+  </div>`;
+
+/* Une carte de fond d'écran (jour ou nuit) avec son aperçu. */
+const wallCard = (theme, label, w, url) => `
+  <div class="wallopt">
+    <div class="wallprev">${url
+      ? ((w.kind || '').startsWith('video')
+        ? `<video src="${url}" muted loop autoplay playsinline></video>`
+        : `<img src="${url}" alt="">`)
+      : `<span class="wallempty">Aucun fond</span>`}</div>
+    <div class="wallbody">
+      <div class="wallname">${esc(label)}</div>
+      <div class="row wrap" style="margin-top:8px">
+        <button class="btn-sm" data-act="pickWall" data-theme="${theme}">${url ? 'Remplacer' : 'Choisir une image'}</button>
+        ${url ? `<button class="btn-sm btn-ghost btn-danger" data-act="clearWall" data-theme="${theme}">Retirer</button>` : ''}
+      </div>
+    </div>
+  </div>`;
+
+/* Résultat du dernier message d'essai, affiché sous le bloc. */
+let AI_OUT = null;
+export const setAiOut = (text, error) => { AI_OUT = text ? { text, error: !!error } : null; };
+
+/* Le bloc « intelligence artificielle » : clé de l'utilisateur, puis choix du modèle. */
+function aiBlock(cfg) {
+  const P = providerOf(cfg.provider);
+  const models = (cfg.models || []).length ? cfg.models : suggestedModels(cfg.provider).map(id => ({ id, label: id }));
+  const listed = (cfg.models || []).length > 0;
+  const state = !cfg.apiKey ? ['Aucune clé enregistrée', 'off']
+    : !cfg.model ? ['Clé enregistrée · choisis un modèle', 'wait']
+      : [`Prêt · ${P.name} · ${cfg.model}`, 'ok'];
+
+  return `<div class="card" id="aiCard">
+    <div class="row wrap aihead">
+      <div class="aihead-t">
+        <h2 style="margin-bottom:4px">Intelligence artificielle</h2>
+        <div class="small muted">Apporte ta propre clé (BYOK) : le grimoire ne fournit aucun accès,
+        il utilise le compte que tu indiques ici.</div>
+      </div>
+      <span class="aistate ${state[1]}">${esc(state[0])}</span>
     </div>
 
-    <div class="card">
-    <h2>Paramètres</h2>
-    <div class="small muted">Cet espace accueillera les préférences générales de l'interface et du
-    fonctionnement du Grimoire.</div>
     <div class="rule"></div>
-    <div class="tiny muted">Le stockage des fichiers reste consultable dans l'onglet Coffre de la Guilde.</div>
-    </div>`;
+
+    <label class="lbl" for="aiProvider">Fournisseur</label>
+    <select id="aiProvider" data-change="aiProvider">` +
+    Object.values(PROVIDERS).map(x =>
+      `<option value="${x.key}"${x.key === cfg.provider ? ' selected' : ''}>${esc(x.name)}</option>`).join('') +
+    `</select>
+    ${P.note ? `<div class="fnote" style="margin-top:6px">${esc(P.note)}</div>` : ''}
+
+    ${P.custom || cfg.baseUrl ? `<label class="lbl" for="aiBase">URL de base du service</label>
+      <input id="aiBase" type="url" spellcheck="false" placeholder="${esc(P.base || 'https://mon-service/v1')}"
+        value="${esc(cfg.baseUrl || '')}">` : ''}
+
+    <label class="lbl" for="aiKey">${esc(P.keyLabel)}</label>
+    <input id="aiKey" type="password" autocomplete="off" spellcheck="false"
+      placeholder="${cfg.apiKey ? esc(maskKey(cfg.apiKey)) + ' — saisis une nouvelle clé pour la remplacer' : esc(P.keyHint)}">
+    <div class="row wrap" style="margin-top:10px">
+      <button class="btn-ember btn-sm" data-act="aiSaveKey">Enregistrer la clé</button>
+      <button class="btn-sm" data-act="aiLoadModels"${cfg.apiKey ? '' : ' disabled'}>Charger les modèles</button>
+      ${cfg.apiKey ? `<div class="sp"></div>
+        <button class="btn-sm btn-ghost btn-danger" data-act="aiClear">Effacer la clé</button>` : ''}
+    </div>
+    ${P.keyUrl ? `<div class="fnote" style="margin-top:8px">Créer une clé :
+      <a href="${P.keyUrl}" target="_blank" rel="noopener noreferrer">${esc(P.keyUrl)}</a></div>` : ''}
+
+    <div class="rule"></div>
+
+    <label class="lbl" for="aiModel">Modèle</label>
+    <select id="aiModel" data-change="aiPickModel"${models.length ? '' : ' disabled'}>
+      <option value=""${cfg.model ? '' : ' selected'}>— choisir un modèle —</option>` +
+    models.map(m => `<option value="${esc(m.id)}"${m.id === cfg.model ? ' selected' : ''}>${esc(m.label || m.id)}</option>`).join('') +
+    (cfg.model && !models.some(m => m.id === cfg.model)
+      ? `<option value="${esc(cfg.model)}" selected>${esc(cfg.model)}</option>` : '') +
+    `</select>
+    <div class="fnote" style="margin-top:6px">${listed
+      ? `${models.length} modèle(s) proposés par le fournisseur pour cette clé.`
+      : 'Suggestions courantes tant que la liste n\'a pas été chargée.'}</div>
+
+    <label class="lbl" for="aiModelFree">Ou saisis l'identifiant exact du modèle</label>
+    <div class="row">
+      <input id="aiModelFree" spellcheck="false" placeholder="${esc(P.defaultModel || 'identifiant du modèle')}">
+      <button class="btn-sm" data-act="aiSetModelFree">Utiliser</button>
+    </div>
+
+    <div class="rule"></div>
+
+    <div class="row wrap">
+      <button class="btn-sm" data-act="aiTest"${cfg.apiKey && cfg.model ? '' : ' disabled'}>Envoyer un message d'essai</button>
+      <div class="sp"></div>
+      ${cfg.checkedAt ? `<span class="tiny muted">Dernier échange réussi :
+        ${new Date(cfg.checkedAt).toLocaleString('fr-FR')}</span>` : ''}
+    </div>
+    <div id="aiOut" class="aiout${AI_OUT && AI_OUT.error ? ' err' : ''}"${AI_OUT ? '' : ' hidden'}>${
+      AI_OUT ? esc(AI_OUT.text) : ''}</div>
+
+    <div class="fnote" style="margin-top:12px">La clé est rangée sur cet appareil, dans la base du
+    navigateur, et n'est envoyée qu'au fournisseur choisi. Sur un appareil partagé, efface-la après usage.
+    Un service qui n'autorise pas les appels directs depuis une page web renverra une erreur réseau.</div>
+  </div>`;
+}
+
+export async function viewSettings() {
+  setHead('Paramètres', 'Préférences du grimoire');
+  const pref = getTheme();
+  const walls = await getWallpapers();
+  const urls = {
+    light: walls.light && walls.light.assetId ? await assetURL(walls.light.assetId) : null,
+    dark: walls.dark && walls.dark.assetId ? await assetURL(walls.dark.assetId) : null
+  };
+  const cfg = await getAI();
+
+  app().innerHTML = `<div class="card" style="margin-bottom:12px">
+    <h2>Apparence</h2>
+    <div class="small muted">Choisis le mode d'affichage. « Automatique » suit le réglage jour / nuit de
+    ton appareil — actuellement <b>${resolvedTheme() === 'dark' ? 'nuit' : 'jour'}</b>.</div>
+    <div class="thgrid" role="group" aria-label="Thème">
+      ${themeCard('auto', 'Automatique', 'Suit le système', pref)}
+      ${themeCard('light', 'Jour', 'Fond clair', pref)}
+      ${themeCard('dark', 'Nuit', 'Fond sombre', pref)}
+    </div>
+    <div class="tiny muted" style="margin-top:10px">Le bouton en haut à droite fait la même bascule
+    depuis n'importe quelle page.</div>
+
+    <div class="rule"></div>
+
+    <div class="frt">Fonds d'écran</div>
+    <div class="small muted" style="margin-bottom:12px">Une image ou une vidéo par thème. Elle habille
+    le fond de l'application quand la page n'impose pas déjà le sien (bannière de projet, fond de fiche).</div>
+    <div class="wallgrid">
+      ${wallCard('light', 'Fond de jour', walls.light || {}, urls.light)}
+      ${wallCard('dark', 'Fond de nuit', walls.dark || {}, urls.dark)}
+    </div>
+  </div>
+
+  ${aiBlock(cfg)}
+
+  <div class="card" style="margin-top:12px">
+    <h2>Stockage</h2>
+    <div class="small muted">Le détail des fichiers et de l'espace occupé est dans l'onglet Coffre de la Guilde.</div>
+  </div>`;
+
+  await setStage(null);
 }
 
 /* ---------- Coffre ---------- */

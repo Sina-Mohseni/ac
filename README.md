@@ -23,6 +23,34 @@ court script en tête de `index.html` : pas de clignotement au chargement. Toute
 des variables CSS de `css/base.css` — les anciens noms (`--ember`, `--parch`, `--line`…) restent
 disponibles comme alias des jetons Material.
 
+### Fonds d'écran
+
+**Paramètres → Apparence** accueille aussi un fond d'écran par thème : une image ou une vidéo pour le
+jour, une autre pour la nuit. Le fichier est rangé tel quel dans le coffre, et le fond suit la bascule
+jour / nuit à chaud. Une page qui impose déjà son propre fond — bannière de projet, image d'une fiche —
+garde la priorité ; le fond d'écran reprend la main dès qu'on la quitte.
+
+## Intelligence artificielle (BYOK)
+
+**Paramètres → Intelligence artificielle** branche le grimoire sur le compte d'IA de l'utilisateur :
+*apporte ta propre clé*. L'application ne fournit aucun accès et n'ajoute aucun intermédiaire.
+
+1. choisir le fournisseur — Anthropic (Claude), OpenAI, Google (Gemini), Mistral, OpenRouter, ou tout
+   service compatible OpenAI dont on donne l'URL de base ;
+2. coller sa clé API, puis l'enregistrer ;
+3. charger la liste des modèles réellement ouverts à cette clé, et choisir celui à utiliser (ou saisir
+   son identifiant à la main) ;
+4. envoyer un message d'essai pour vérifier que tout répond.
+
+La clé est rangée dans IndexedDB (magasin `kv`, clé `ai`), sur l'appareil, et n'est envoyée qu'au
+fournisseur choisi, dans l'en-tête d'authentification. Elle n'est jamais réaffichée en clair : le champ
+ne montre qu'un repère masqué. Changer de fournisseur efface la clé précédente, et « Effacer la clé »
+la retire complètement.
+
+`js/ai.js` regroupe les fournisseurs, `listModels()` et `chat()` — les appels passent par `fetch`,
+l'application étant servie en modules ES sans étape de build. Un service qui refuse les appels directs
+depuis une page web (CORS) renvoie une erreur réseau explicite dans le bloc de résultat.
+
 ## Lancer
 
 Les fichiers JavaScript sont des modules ES : ils exigent un serveur, `file://` ne fonctionnera pas.
@@ -53,6 +81,7 @@ animconnect/
 └── js/
     ├── main.js           démarrage
     ├── theme.js          thème jour / nuit / automatique, mémorisation du choix
+    ├── ai.js             fournisseurs d'IA, clé de l'utilisateur, modèles, échanges
     ├── db.js             IndexedDB, fichiers bruts, arbre de groupes, fiches, guilde
     ├── state.js          état global, branches, familles de fiches, rangs de guilde
     ├── utils.js          formats, sélection de fichiers, sondage de durée
@@ -68,7 +97,7 @@ animconnect/
         ├── project.js    onglets pistes, éléments, production
         ├── timeline.js   chronologie verticale
         ├── tracker.js    les quatre salles de la Guilde
-        └── pages.js      expérience, musique, paramètres, coffre
+        └── pages.js      expérience, musique, paramètres (apparence, fonds, IA), coffre
 ```
 
 ## Modèle de données (IndexedDB `GRIMOIRE_ANIMCONNECT`, version 4)
@@ -86,7 +115,7 @@ animconnect/
 | `goals`    | quêtes (étapes ou compteur) | — |
 | `profiles` | fiches de personas utilisateur | — |
 | `personas` | fiches de personas IA | — |
-| `kv`       | blason de la guilde, fiches actives | `k` |
+| `kv`       | blason de la guilde, fiches actives, fonds d'écran (`wallpapers`), réglages d'IA (`ai`) | `k` |
 
 Les fichiers sont stockés tels quels : aucun type imposé, aucune conversion, aucune compression.
 La seule limite est le quota du navigateur, lisible dans la salle Coffre.
@@ -97,11 +126,12 @@ La seule limite est le quota du navigateur, lisible dans la salle Coffre.
 - **Guilde** : bannière et blason, sceau de renom calculé sur le contenu réel, quatre plaques vers les
   salles, cercle des profils et personas, registre des jalons, quêtes et projets récents.
 - **Salles** : Bibliothèque, Calendrier, Quêtes et Coffre gardent leur barre d'icônes et un retour Guilde.
-- **En-tête** : l'icône Accueil ramène à la Guilde ; Musique et Paramètres à droite.
+- **En-tête** : l'icône Accueil ramène à la Guilde ; bascule jour / nuit, Musique et Paramètres à droite.
 - **Footer** : profil et persona IA actifs à gauche, avec leur portrait ; Histoires, Jeux, Expo et Personas
   à droite.
 - **Profils / Personas IA** : bande horizontale de toutes les fiches, « + » pour en ouvrir une nouvelle,
   étoile sur la fiche active, puis la fiche elle-même.
+- **Paramètres** : apparence (thème et fond d'écran jour / nuit) et accès à l'IA de l'utilisateur.
 
 ## La fiche de personnage
 

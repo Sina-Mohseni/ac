@@ -38,6 +38,7 @@ export function applyTheme(pref) {
   if (p === 'auto') el.removeAttribute('data-theme');
   else el.setAttribute('data-theme', p);
   try { localStorage.setItem(KEY, p); } catch (e) { /* stockage refusé */ }
+  window.dispatchEvent(new CustomEvent('ac:theme', { detail: { pref: p, theme: resolvedTheme() } }));
   const btn = document.getElementById('btnTheme');
   if (btn) {
     btn.title = `Thème : ${themeLabel(p).toLowerCase()}`;

@@ -1,6 +1,7 @@
-import { assetURL, getOwner, listChars, getActiveChar } from './db.js';
+import { assetURL, getOwner, listChars, getActiveChar, getWallpaper } from './db.js';
 import { esc, fmtT2, fmtSize } from './utils.js';
 import { S, kindOf } from './state.js';
+import { resolvedTheme } from './theme.js';
 
 export const app = () => document.getElementById('app');
 const mroot = () => document.getElementById('modalRoot');
@@ -51,41 +52,59 @@ export function setNav(view) {
   document.querySelectorAll('.fnav-roots button').forEach(b => b.classList.toggle('on', b.dataset.root === S.activeRootId));
 }
 
-/* Fond plein écran à partir d'un fichier précis (fiches de personnage). */
-export async function setStageAsset(assetId, kind) {
+/* ---- fond plein écran ----------------------------------------
+   Deux niveaux : le fond demandé par la vue (bannière d'un projet,
+   image d'une fiche) et, à défaut, le fond d'écran choisi dans les
+   paramètres pour le thème courant — un pour le jour, un pour la nuit.
+   -------------------------------------------------------------- */
+
+let STAGE = { assetId: null, kind: '' };
+
+async function paintStage(assetId, kind) {
   const st = document.getElementById('bgstage');
   const old = st.querySelector('video,img');
-  if (old) old.remove();
   const u = assetId ? await assetURL(assetId) : null;
-  if (!u) { st.classList.remove('on'); return; }
+  if (!u) {
+    if (old) old.remove();
+    st.classList.remove('on');
+    return;
+  }
+  if (old) {
+    if (old.dataset.assetId === assetId) { st.classList.add('on'); return; }
+    old.remove();
+  }
   let n;
   if ((kind || '').startsWith('video')) {
     n = document.createElement('video');
     n.src = u; n.muted = true; n.loop = true; n.playsInline = true; n.autoplay = true;
-  } else { n = document.createElement('img'); n.src = u; }
+  } else { n = document.createElement('img'); n.src = u; n.alt = ''; }
+  n.dataset.assetId = assetId;
   st.insertBefore(n, st.firstChild);
   st.classList.add('on');
   if (n.play) n.play().catch(() => {});
 }
 
-export async function setStage(id) {
-  const st = document.getElementById('bgstage');
-  const old = st.querySelector('video,img');
-  if (old) old.remove();
-  if (!id) { st.classList.remove('on'); return; }
-  const o = await getOwner(id);
-  if (!o || !o.bgAssetId) { st.classList.remove('on'); return; }
-  const u = await assetURL(o.bgAssetId);
-  if (!u) { st.classList.remove('on'); return; }
-  let n;
-  if ((o.bgKind || '').startsWith('video')) {
-    n = document.createElement('video');
-    n.src = u; n.muted = true; n.loop = true; n.playsInline = true; n.autoplay = true;
-  } else { n = document.createElement('img'); n.src = u; }
-  st.insertBefore(n, st.firstChild);
-  st.classList.add('on');
-  if (n.play) n.play().catch(() => {});
+/* Applique le fond demandé, ou le fond d'écran du thème courant. */
+async function refreshStage() {
+  if (STAGE.assetId) return paintStage(STAGE.assetId, STAGE.kind);
+  const w = await getWallpaper(resolvedTheme());
+  return paintStage(w.assetId, w.kind);
 }
+
+/* Fond plein écran à partir d'un fichier précis (fiches de personnage). */
+export async function setStageAsset(assetId, kind) {
+  STAGE = { assetId: assetId || null, kind: kind || '' };
+  return refreshStage();
+}
+
+export async function setStage(id) {
+  const o = id ? await getOwner(id) : null;
+  STAGE = o && o.bgAssetId ? { assetId: o.bgAssetId, kind: o.bgKind || '' } : { assetId: null, kind: '' };
+  return refreshStage();
+}
+
+/* Le fond d'écran suit la bascule jour / nuit. */
+window.addEventListener('ac:theme', () => { refreshStage().catch(() => {}); });
 
 /* ---- fragments réutilisables ---- */
 export const stat = (v, l) =>
