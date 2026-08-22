@@ -514,6 +514,16 @@ const A = {
 
   /* ---------- guilde ---------- */
   editGuild: () => mGuild(),
+  /* Envoi direct depuis le cadre du blason, sans passer par la fenêtre. */
+  crestUpload: () => pickFiles(false, async f => {
+    const { ensureGuild } = await import('./db.js');
+    const g = await ensureGuild();
+    g.crestAssetId = await saveAsset(f[0]);
+    g.crestKind = f[0].type;
+    await saveGuild(g);
+    toast('Blason mis à jour');
+    await render();
+  }),
   pickGuildCrest: () => pickFiles(false, async f => {
     D.guild.crestAssetId = await saveAsset(f[0]); D.guild.crestKind = f[0].type; toast('Blason chargé');
   }),
@@ -524,7 +534,6 @@ const A = {
     const g = D.guild;
     g.name = document.getElementById('uName').value.trim() || "ANIM'CONNECT";
     g.motto = document.getElementById('uMotto').value.trim();
-    g.rune = (document.getElementById('uRune').value.trim() || 'A').slice(0, 2);
     g.desc = document.getElementById('uDesc').value;
     await saveGuild(g);
     closeModal();

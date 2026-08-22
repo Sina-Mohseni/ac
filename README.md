@@ -29,6 +29,11 @@ comme de nuit. Le fichier est rangé tel quel dans le coffre et **occupe tout l'
 sans voile par-dessus. Une page qui impose déjà son propre fond — bannière de projet, image d'une fiche —
 garde la priorité ; le fond d'écran reprend la main dès qu'on la quitte.
 
+La **page d'accueil est dessinée pour ce fond** : plus de cartes opaques, chaque bloc devient du verre
+dépoli (fond translucide teinté par le thème + flou). L'image se lit à travers les blocs, nette dans les
+marges et les interstices, et aucun texte ne repose directement dessus — la lisibilité ne dépend donc
+jamais de l'image choisie, ni en jour ni en nuit. Les en-têtes de section ont leur propre barre de verre.
+
 ## Intelligence artificielle (BYOK)
 
 **Paramètres → Intelligence artificielle** branche le grimoire sur le compte d'IA de l'utilisateur :
@@ -123,7 +128,9 @@ La seule limite est le quota du navigateur, lisible dans la salle Coffre.
 
 - **Ouverture** : la Guilde, et non plus le calendrier.
 - **Guilde** : bannière et blason, sceau de renom calculé sur le contenu réel, quatre plaques vers les
-  salles, cercle des profils et personas, registre des jalons, quêtes et projets récents.
+  salles, cercle des profils et personas, registre des jalons, quêtes et projets récents. Le cadre du
+  blason, à gauche du nom, est une zone d'envoi : un appui ouvre le choix d'image, et l'image remplit
+  le cadre.
 - **Salles** : Bibliothèque, Calendrier, Quêtes et Coffre gardent leur barre d'icônes et un retour Guilde.
 - **En-tête** : l'icône Accueil ramène à la Guilde ; Musique et Paramètres à droite.
 - **Footer** : profil et persona IA actifs à gauche, avec leur portrait ; Histoires, Jeux, Expo et Personas

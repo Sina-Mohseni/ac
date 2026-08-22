@@ -290,13 +290,12 @@ export async function mGuild() {
     <input id="uName" value="${esc(g.name)}" placeholder="ANIM'CONNECT">
     <label class="lbl">Devise</label>
     <input id="uMotto" value="${esc(g.motto || '')}" placeholder="Lire, voir, entendre, vivre, interagir.">
-    <label class="lbl">Rune du blason (si aucune image)</label>
-    <input id="uRune" value="${esc(g.rune || 'A')}" maxlength="2" placeholder="A">
     <label class="lbl">Présentation</label>
     <textarea id="uDesc" rows="4" placeholder="Ce que fait la guilde, pour qui, avec quoi…">${esc(g.desc || '')}</textarea>
     <label class="lbl">Blason (image du sceau)</label>
     <div class="row"><button class="btn-sm" data-act="pickGuildCrest">Choisir un fichier</button>
     <span class="tiny muted">${crest ? 'défini' : 'aucun'}</span></div>
+    <div class="fnote">Le cadre du blason, en haut de la Guilde, ouvre aussi ce choix d'un simple appui.</div>
     <label class="lbl">Bannière (fond de la salle)</label>
     <div class="row"><button class="btn-sm" data-act="pickGuildBanner">Choisir un fichier</button>
     <span class="tiny muted">${banner ? 'définie' : 'aucune'}</span></div>
