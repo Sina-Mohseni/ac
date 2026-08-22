@@ -54,12 +54,14 @@
   /* voile posé sur les médias : la couleur de fond du thème */
   --veil-rgb: 255, 255, 255;
 
-  /* verre dépoli : laisse voir le fond d'écran, garde le texte lisible */
-  --glass: rgba(255, 255, 255, .72);
-  --glass-strong: rgba(255, 255, 255, .86);
-  --glass-line: rgba(0, 0, 0, .10);
-  --glass-blur: saturate(160%) blur(20px);
-  --glass-hover: rgba(0, 0, 0, .06);
+  /* cadres posés sur le fond d'écran : voile très léger, sans flou.
+     Le halo protège la lisibilité des textes qui reposent sur l'image. */
+  --tint: rgba(255, 255, 255, .16);
+  --tint-hover: rgba(255, 255, 255, .30);
+  --tint-line: rgba(255, 255, 255, .40);
+  --tint-hover-soft: rgba(0, 0, 0, .06);
+  --halo: 0 0 3px rgba(255, 255, 255, 1), 0 1px 2px rgba(255, 255, 255, 1),
+    0 0 10px rgba(255, 255, 255, .9), 0 2px 18px rgba(255, 255, 255, .8);
 
   /* ombres Material */
   --e1: 0 1px 2px rgba(0,0,0,.10), 0 1px 3px 1px rgba(0,0,0,.06);
@@ -115,11 +117,12 @@
 
     --veil-rgb: 19, 19, 20;
 
-    --glass: rgba(20, 20, 22, .72);
-    --glass-strong: rgba(20, 20, 22, .88);
-    --glass-line: rgba(255, 255, 255, .14);
-    --glass-blur: saturate(150%) blur(20px);
-    --glass-hover: rgba(255, 255, 255, .08);
+    --tint: rgba(0, 0, 0, .24);
+    --tint-hover: rgba(0, 0, 0, .42);
+    --tint-line: rgba(255, 255, 255, .22);
+    --tint-hover-soft: rgba(255, 255, 255, .08);
+    --halo: 0 0 3px rgba(0, 0, 0, 1), 0 1px 2px rgba(0, 0, 0, 1),
+      0 0 10px rgba(0, 0, 0, .92), 0 2px 18px rgba(0, 0, 0, .85);
 
     --e1: 0 1px 2px rgba(0,0,0,.35), 0 1px 3px 1px rgba(0,0,0,.20);
     --e2: 0 1px 2px rgba(0,0,0,.40), 0 2px 6px 2px rgba(0,0,0,.24);
@@ -173,11 +176,12 @@
 
   --veil-rgb: 19, 19, 20;
 
-  --glass: rgba(20, 20, 22, .72);
-  --glass-strong: rgba(20, 20, 22, .88);
-  --glass-line: rgba(255, 255, 255, .14);
-  --glass-blur: saturate(150%) blur(20px);
-  --glass-hover: rgba(255, 255, 255, .08);
+  --tint: rgba(0, 0, 0, .24);
+  --tint-hover: rgba(0, 0, 0, .42);
+  --tint-line: rgba(255, 255, 255, .22);
+  --tint-hover-soft: rgba(255, 255, 255, .08);
+  --halo: 0 0 3px rgba(0, 0, 0, 1), 0 1px 2px rgba(0, 0, 0, 1),
+    0 0 10px rgba(0, 0, 0, .92), 0 2px 18px rgba(0, 0, 0, .85);
 
   --e1: 0 1px 2px rgba(0,0,0,.35), 0 1px 3px 1px rgba(0,0,0,.20);
   --e2: 0 1px 2px rgba(0,0,0,.40), 0 2px 6px 2px rgba(0,0,0,.24);

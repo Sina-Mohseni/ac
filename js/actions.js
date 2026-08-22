@@ -514,16 +514,54 @@ const A = {
 
   /* ---------- guilde ---------- */
   editGuild: () => mGuild(),
-  /* Envoi direct depuis le cadre du blason, sans passer par la fenêtre. */
-  crestUpload: () => pickFiles(false, async f => {
+  /* Le cadre du blason ouvre un tiroir : blason, ou fond d'écran. */
+  crestUpload: async () => {
+    const { ensureGuild, getWallpaper } = await import('./db.js');
+    const g = await ensureGuild();
+    const wall = await getWallpaper();
+    const icon = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+    const crestIcon = icon('<path d="M12 3l7 3v6c0 4-3 6.5-7 9-4-2.5-7-5-7-9V6z"/>');
+    const wallIcon = icon('<rect x="3" y="5" width="18" height="14" rx="2"/>'
+      + '<circle cx="8.5" cy="10" r="1.5"/><path d="M4 17l5-4 3 2.5 3.5-3.5L20 16"/>');
+    modal(`<div class="hd"><h2 style="margin:0">Images de la Guilde</h2><div class="sp"></div>
+      <button class="btn-sm btn-ghost" data-act="closeModal">Fermer</button></div>
+      <div class="tiny muted" style="margin-bottom:12px">Choisis ce que cette image doit habiller.</div>` +
+      opt('pickCrestFile', '', crestIcon, 'Blason',
+        g.crestAssetId ? 'Remplacer l\'image du cadre, à côté du nom' : 'Image du cadre, à côté du nom',
+        'imgpick') +
+      opt('pickWall', '', wallIcon, "Fond d'écran",
+        wall.assetId ? "Remplacer l'image de fond de l'application" : "Image de fond de toute l'application",
+        'imgpick arcane') +
+      (g.crestAssetId || wall.assetId
+        ? `<div class="row wrap" style="margin-top:14px">
+            ${g.crestAssetId ? '<button class="btn-sm btn-ghost btn-danger" data-act="clearCrest">Retirer le blason</button>' : ''}
+            ${wall.assetId ? '<button class="btn-sm btn-ghost btn-danger" data-act="clearWall">Retirer le fond d\'écran</button>' : ''}
+          </div>`
+        : ''));
+  },
+  pickCrestFile: () => {
+    /* Le sélecteur s'ouvre dans le geste de l'utilisateur ; la fenêtre se ferme ensuite. */
+    pickFiles(false, async f => {
+      const { ensureGuild } = await import('./db.js');
+      const g = await ensureGuild();
+      g.crestAssetId = await saveAsset(f[0]);
+      g.crestKind = f[0].type;
+      await saveGuild(g);
+      toast('Blason mis à jour');
+      await render();
+    });
+    return closeModal();
+  },
+  clearCrest: async () => {
     const { ensureGuild } = await import('./db.js');
     const g = await ensureGuild();
-    g.crestAssetId = await saveAsset(f[0]);
-    g.crestKind = f[0].type;
+    g.crestAssetId = null;
+    g.crestKind = '';
     await saveGuild(g);
-    toast('Blason mis à jour');
-    await render();
-  }),
+    await closeModal();
+    toast('Blason retiré');
+    return render();
+  },
   pickGuildCrest: () => pickFiles(false, async f => {
     D.guild.crestAssetId = await saveAsset(f[0]); D.guild.crestKind = f[0].type; toast('Blason chargé');
   }),
@@ -650,14 +688,18 @@ const A = {
   },
 
   /* ---------- fond d'écran ---------- */
-  pickWall: () => pickFiles(false, async f => {
-    const id = await saveAsset(f[0]);
-    await setWallpaper(id, f[0].type);
-    toast("Fond d'écran enregistré");
-    await render();
-  }),
+  pickWall: () => {
+    pickFiles(false, async f => {
+      const id = await saveAsset(f[0]);
+      await setWallpaper(id, f[0].type);
+      toast("Fond d'écran enregistré");
+      await render();
+    });
+    return closeModal();
+  },
   clearWall: async () => {
     await setWallpaper(null);
+    await closeModal();
     toast("Fond d'écran retiré");
     return render();
   },
