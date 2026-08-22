@@ -4,12 +4,14 @@ import { get, groupPath } from './db.js';
 import { viewGroup } from './views/library.js';
 import { viewProject } from './views/project.js';
 import { viewTracker } from './views/tracker.js';
-import { viewGuild } from './views/guild.js';
+import { viewGuild, viewHourglass, viewSphere } from './views/guild.js';
 import { personasHTML } from './views/sheet.js';
 import { viewExperience, viewVault, viewMusic, viewSettings } from './views/pages.js';
 
 const VIEWS = {
   guild: viewGuild,
+  hourglass: viewHourglass,
+  sphere: viewSphere,
   group: viewGroup,
   project: viewProject,
   tracker: viewTracker,

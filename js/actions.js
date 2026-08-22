@@ -1,10 +1,10 @@
 import {
   get, put, del, all, byIdx, saveAsset, assetURL,
   deleteGroupTree, isProject, rootForGroup, rootForProject, isRootGroup,
-  saveGuild, putPersona, delPersona, setActivePersona, getActivePersona, listPersonas,
+  saveHouse, putPersona, delPersona, setActivePersona, getActivePersona, listPersonas,
   listMilieux, listSubMilieux, putMilieu, delMilieu, setWallpaper
 } from './db.js';
-import { S, PIPE, ROOTS, rootInfo, MILIEU_ROOTS, MILIEU_GUILDE, milieuRoot } from './state.js';
+import { S, PIPE, ROOTS, rootInfo, MILIEU_ROOTS, MILIEU_GUILDE, milieuRoot, houseOf, houseByKey } from './state.js';
 import { closeModal, modal, opt, setNav } from './ui.js';
 import { pickFiles, probeDuration, toast, uid, today, esc } from './utils.js';
 import { audio, PL, loadQueue, playIndex, seekGlobal, globalTime, stopAll, renderBand } from './player.js';
@@ -509,11 +509,12 @@ const A = {
   },
 
   /* ---------- guilde ---------- */
-  editGuild: () => mGuild(),
+  editGuild: () => mGuild(houseOf(S.view).key),
   /* Le cadre du blason ouvre un tiroir : blason, ou fond d'écran. */
   crestUpload: async () => {
-    const { ensureGuild, getWallpaper } = await import('./db.js');
-    const g = await ensureGuild();
+    const { ensureHouse, getWallpaper } = await import('./db.js');
+    const H = houseOf(S.view);
+    const g = await ensureHouse(H.key);
     const wall = await getWallpaper();
     const icon = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
     const crestIcon = icon('<path d="M12 3l7 3v6c0 4-3 6.5-7 9-4-2.5-7-5-7-9V6z"/>');
@@ -522,7 +523,7 @@ const A = {
     modal(`<div class="hd"><h2 style="margin:0">Images de la Guilde</h2><div class="sp"></div>
       <button class="btn-sm btn-ghost" data-act="closeModal">Fermer</button></div>
       <div class="tiny muted" style="margin-bottom:12px">Choisis ce que cette image doit habiller.</div>` +
-      opt('editGuild', '', crestIcon, 'Blason',
+      opt('editGuild', '', crestIcon, `Blason · ${esc(H.title)}`,
         'Nom, devise, présentation, image du blason et bannière', 'imgpick') +
       opt('pickWall', '', wallIcon, "Fond d'écran",
         wall.assetId ? "Remplacer l'image de fond de l'application" : "Image de fond de toute l'application",
@@ -535,11 +536,12 @@ const A = {
         : ''));
   },
   clearCrest: async () => {
-    const { ensureGuild } = await import('./db.js');
-    const g = await ensureGuild();
+    const { ensureHouse } = await import('./db.js');
+    const H = houseOf(S.view);
+    const g = await ensureHouse(H.key);
     g.crestAssetId = null;
     g.crestKind = '';
-    await saveGuild(g);
+    await saveHouse(H.key, g);
     await closeModal();
     toast('Blason retiré');
     return render();
@@ -552,12 +554,12 @@ const A = {
   }),
   saveGuildInfo: async () => {
     const g = D.guild;
-    g.name = document.getElementById('uName').value.trim() || "ANIM'CONNECT";
+    const key = D.houseKey || 'guild';
+    g.name = document.getElementById('uName').value.trim() || houseByKey(key).name;
     g.motto = document.getElementById('uMotto').value.trim();
     g.desc = document.getElementById('uDesc').value;
-    await saveGuild(g);
+    await saveHouse(key, g);
     closeModal();
-    S.view = 'guild';
     return render();
   },
 

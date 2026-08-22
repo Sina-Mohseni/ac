@@ -40,11 +40,13 @@ export function setHead(title, sub) {
 export function setNav(view) {
   /* La Guilde est la maison : ses quatre salles et tout ce qui en découle
      gardent l'icône d'accueil allumée. */
-  const map = {
-    library: 'guild', tracker: 'guild', group: 'guild',
-    project: 'guild', experience: 'guild', vault: 'guild'
-  };
-  const active = map[view] || view;
+  /* Les vues qui découlent d'une maison gardent son icône allumée :
+     une catégorie d'Histoires reste sous Hourglass, un jeu sous Sphere. */
+  const byRoot = { 'root-histoires': 'hourglass', 'root-jeux': 'sphere' };
+  const inner = ['library', 'tracker', 'group', 'project', 'experience', 'vault'];
+  const active = inner.includes(view)
+    ? (byRoot[S.activeRootId] || 'guild')
+    : view;
   document.querySelectorAll('.hnav button').forEach(b => b.classList.toggle('on', b.dataset.view === active));
   document.querySelectorAll('.fnav-tools button').forEach(b => b.classList.toggle('on', b.dataset.view === active));
   const persona = document.getElementById('btnCurPersona');

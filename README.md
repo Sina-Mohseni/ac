@@ -1,9 +1,17 @@
 # GRIMOIRE · Anim'Connect
 
-Atelier de création. L'application s'ouvre sur la **Guilde** : bannière, sceau de renom, quatre salles
-(Bibliothèque, Calendrier, Quêtes, Coffre), cercle des membres et registre. La bibliothèque garde ses
-trois branches fixes — **Histoires**, **Jeux** et **Expo** — avec catégories imbriquées sans limite,
-projets avec playlist, chronologie verticale, storyboard par éléments.
+Atelier de création. Trois pages d'accueil, atteignables par les trois icônes de gauche :
+
+| Page | Rôle |
+|------|------|
+| **Guilde** (icône maison) | Le nexus : sceau de renom, quatre salles (Bibliothèque, Calendrier, Quêtes, Coffre), les deux ailes, cercle des membres et registre |
+| **Tour Hourglass** (sablier) | La page des **Histoires** : ses mondes, ses chiffres, son cercle et son registre |
+| **Sphère ludique** (sphère) | La page des **Jeux** : ses univers, ses chiffres, son cercle et son registre |
+
+Les trois partagent la même façade — bannière, blason, devise, présentation — et chacune a la sienne,
+modifiable depuis le cadre du blason. La bibliothèque garde ses trois branches fixes — **Histoires**,
+**Jeux** et **Expo** — avec catégories imbriquées sans limite, projets avec playlist, chronologie
+verticale, storyboard par éléments.
 
 Les **personas** forment une seule famille de fiches, réunies dans un tiroir qui monte au clic de leur
 icône : bande horizontale d'avatars, portrait, attributs en tuiles, panneaux thématiques et image de fond
@@ -99,7 +107,7 @@ animconnect/
     ├── actions.js        table d'actions (délégation de clics)
     ├── modals.js         groupe, projet, événement, élément, piste, jalon, quête, blason
     └── views/
-        ├── guild.js      page d'accueil : la Guilde
+        ├── guild.js      les trois pages d'accueil : Guilde, Hourglass, Sphere
         ├── sheet.js      tiroir des personas : milieux, fiches, rôles
         ├── library.js    branches de projets + page de groupe
         ├── project.js    onglets pistes, éléments, production
@@ -124,7 +132,7 @@ animconnect/
 | `personas` | fiches des personas, avec leur rôle, leur milieu d'origine et leurs présences | `milieuId` |
 | `milieux`  | Guilde, Hourglass, Sphere et leurs sous-groupes | `parentId` sur les sous-groupes |
 | `profiles` | ancien magasin des profils, vidé au premier lancement | — |
-| `kv`       | blason de la guilde, persona actif, fond d'écran (`wallpaper`), réglages d'IA (`ai`) | `k` |
+| `kv`       | blason des trois maisons (`guild`, `house-hourglass`, `house-sphere`), persona actif, fond d'écran (`wallpaper`), réglages d'IA (`ai`) | `k` |
 
 Au premier lancement en version 5, les anciennes fiches sont reprises : les profils deviennent des
 personas de rôle « utilisateur », les personas d'alors gardent le rôle « IA · assistant », et tout le
@@ -141,7 +149,9 @@ La seule limite est le quota du navigateur, lisible dans la salle Coffre.
   blason, à gauche du nom, est la seule porte vers les images de la guilde : un tiroir mène soit à la
   fenêtre du blason, soit au fond d'écran, avec leurs retraits.
 - **Salles** : Bibliothèque, Calendrier, Quêtes et Coffre gardent leur barre d'icônes et un retour Guilde.
-- **En-tête** : l'icône Accueil ramène à la Guilde ; Musique et Paramètres à droite.
+- **En-tête** : les trois maisons à gauche — Guilde, Hourglass, Sphere — puis la marque ; Musique et
+  Paramètres à droite. L'icône de la maison reste allumée dans les vues qui en découlent : une catégorie
+  d'Histoires garde Hourglass allumé, un jeu garde Sphere.
 - **Footer** : Histoires, Jeux, Expo, puis Personas tout à droite — ce dernier porte le portrait du
   persona actif.
 - **Personas** : ce n'est pas une page mais un **tiroir** qui monte au clic de l'icône, par-dessus la
@@ -170,7 +180,7 @@ Les personas se rangent dans des **milieux**, trois racines fixes :
 
 | Milieu | Contenu | Sous-groupes |
 |--------|---------|--------------|
-| **Guilde** | Les personas de la guilde Anim'Connect | libres |
+| **Guilde** | Les personas de la guilde Anim'Connect | créés librement |
 | **Hourglass** | Les personas des mondes racontés | créés, ou repris des **mondes des Histoires** |
 | **Sphere** | Les personas des univers de jeu | créés, ou repris des **catégories des Jeux** |
 

@@ -38,6 +38,37 @@ export const ROOTS = [
 
 export const rootInfo = id => ROOTS.find(r => r.id === id) || null;
 
+/* ---------- les trois maisons ----------
+   Trois pages d'accueil : la Guilde en est le nexus, la Tour Hourglass
+   ouvre les Histoires, la Sphère ludique ouvre les Jeux. Chacune a sa
+   bannière, ses chiffres, son cercle de personas et son registre. */
+export const HOUSES = [
+  {
+    key: 'guild', view: 'guild', kv: 'guild', name: 'Guilde', title: 'Guilde',
+    sub: 'Le nexus de l\'atelier', milieuId: 'milieu-guilde', rootId: null,
+    motto: 'Lire, voir, entendre, vivre, interagir.',
+    desc: "Atelier de création ludique : histoires, jeux et expositions. Ici se tiennent les registres, "
+        + "les quêtes en cours et le cercle de celles et ceux qui les mènent."
+  },
+  {
+    key: 'hourglass', view: 'hourglass', kv: 'house-hourglass', name: 'Hourglass',
+    title: 'Tour Hourglass', sub: 'Les Histoires', milieuId: 'milieu-hourglass', rootId: 'root-histoires',
+    motto: 'Le temps se raconte, grain après grain.',
+    desc: "La tour des récits : mondes, personnages et chronologies. On y range les histoires "
+        + "linéaires, interactives, audio, vidéo et transmédias."
+  },
+  {
+    key: 'sphere', view: 'sphere', kv: 'house-sphere', name: 'Sphere',
+    title: 'Sphère ludique', sub: 'Les Jeux', milieuId: 'milieu-sphere', rootId: 'root-jeux',
+    motto: 'Tout tourne autour du jeu.',
+    desc: "La sphère des jeux : plateaux, cartes, expériences numériques et grandeur nature. "
+        + "On y range les univers jouables et leurs règles."
+  }
+];
+
+export const houseOf = view => HOUSES.find(h => h.view === view) || HOUSES[0];
+export const houseByKey = key => HOUSES.find(h => h.key === key) || HOUSES[0];
+
 export const CATS = ['Univers', 'Décors', 'Personnages', 'Objets', 'Sons', 'Effets', 'Autres'];
 
 export const LANES = [
