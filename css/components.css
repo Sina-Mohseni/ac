@@ -632,9 +632,7 @@ label.lbl {
 .thname { font-size: 14px; font-weight: 500; color: var(--on-surface); }
 .thdesc { font-size: 12px; color: var(--on-surface-var); margin-top: 2px; }
 
-/* ---------- fonds d'écran ---------- */
-.wallgrid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-@media (min-width: 560px) { .wallgrid { grid-template-columns: repeat(2, 1fr); } }
+/* ---------- fond d'écran ---------- */
 .wallopt {
   border: 1px solid var(--outline-var);
   border-radius: var(--r);
@@ -647,7 +645,7 @@ label.lbl {
 }
 .wallprev {
   position: relative;
-  height: 128px;
+  height: 168px;
   background: color-mix(in srgb, var(--on-surface) 6%, transparent);
   display: flex;
   align-items: center;
@@ -656,7 +654,6 @@ label.lbl {
 .wallprev img, .wallprev video { width: 100%; height: 100%; object-fit: cover; }
 .wallempty { font-size: 13px; color: var(--on-surface-var); }
 .wallbody { padding: 12px 14px 14px; }
-.wallname { font-size: 14px; font-weight: 500; }
 
 /* ---------- bloc IA ---------- */
 .aihead { align-items: flex-start; gap: 12px; }

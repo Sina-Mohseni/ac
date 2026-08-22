@@ -5,7 +5,8 @@
      data-theme      = light | dark          (thème réellement appliqué,
                                               absent en mode automatique)
    Un script court dans index.html applique déjà ce choix avant le
-   premier rendu ; ce module ne sert qu'aux changements à chaud.
+   premier rendu ; ce module ne sert qu'aux changements à chaud,
+   pilotés depuis Paramètres → Apparence.
    ============================================================ */
 
 const KEY = 'ac-theme';
@@ -39,22 +40,10 @@ export function applyTheme(pref) {
   else el.setAttribute('data-theme', p);
   try { localStorage.setItem(KEY, p); } catch (e) { /* stockage refusé */ }
   window.dispatchEvent(new CustomEvent('ac:theme', { detail: { pref: p, theme: resolvedTheme() } }));
-  const btn = document.getElementById('btnTheme');
-  if (btn) {
-    btn.title = `Thème : ${themeLabel(p).toLowerCase()}`;
-    btn.setAttribute('aria-label', btn.title);
-  }
   return p;
 }
 
-/* Bascule dans l'ordre : automatique → jour → nuit → automatique. */
-export function cycleTheme() {
-  const order = THEMES.map(t => t[0]);
-  const next = order[(order.indexOf(getTheme()) + 1) % order.length];
-  return applyTheme(next);
-}
-
-/* Au démarrage : titre du bouton, et suivi du système en mode auto. */
+/* Au démarrage : réapplique le choix, et suit le système en mode auto. */
 export function initTheme() {
   applyTheme(getTheme());
   if (!window.matchMedia) return;

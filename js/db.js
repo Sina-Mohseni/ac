@@ -86,20 +86,21 @@ export const getKV = async (k, fallback) => {
 };
 export const setKV = (k, v) => put('kv', { k, v });
 
-/* ---- fonds d'écran : un pour le jour, un pour la nuit ---- */
-export const getWallpapers = async () => ({ light: {}, dark: {}, ...(await getKV('wallpapers', {})) });
-
-export const getWallpaper = async theme => {
-  const w = await getWallpapers();
-  return w[theme === 'dark' ? 'dark' : 'light'] || {};
-};
-
-export async function setWallpaper(theme, assetId, kind) {
-  const w = await getWallpapers();
-  w[theme === 'dark' ? 'dark' : 'light'] = assetId ? { assetId, kind: kind || '' } : {};
-  await setKV('wallpapers', w);
-  return w;
+/* ---- fond d'écran : une seule image ou vidéo, jour comme nuit ---- */
+export async function getWallpaper() {
+  const w = await getKV('wallpaper', null);
+  if (w && w.assetId) return w;
+  /* Ancienne forme : un fond par thème. On reprend celui qui existe. */
+  const old = await getKV('wallpapers', null);
+  if (old) {
+    if (old.light && old.light.assetId) return old.light;
+    if (old.dark && old.dark.assetId) return old.dark;
+  }
+  return {};
 }
+
+export const setWallpaper = (assetId, kind) =>
+  setKV('wallpaper', assetId ? { assetId, kind: kind || '' } : {});
 
 /* ---- identité de la guilde ---- */
 export const GUILD_DEFAULT = {
