@@ -1,5 +1,5 @@
 import { uid } from './utils.js';
-import { ROOTS, MILIEU_ROOTS, MILIEU_GUILDE } from './state.js';
+import { ROOTS, MILIEU_ROOTS, MILIEU_GUILDE, HOUSES, houseByKey } from './state.js';
 
 export const DBN = 'GRIMOIRE_ANIMCONNECT';
 const DBV = 5;
@@ -103,27 +103,41 @@ export async function getWallpaper() {
 export const setWallpaper = (assetId, kind) =>
   setKV('wallpaper', assetId ? { assetId, kind: kind || '' } : {});
 
-/* ---- identité de la guilde ---- */
-export const GUILD_DEFAULT = {
-  k: 'guild',
-  name: "Anim'Connect",
-  motto: 'Lire, voir, entendre, vivre, interagir.',
-  desc: "Atelier de création ludique : histoires, jeux et expositions. Ici se tiennent les registres, "
-      + "les quêtes en cours et le cercle de celles et ceux qui les mènent.",
-  rune: 'A',
-  crestAssetId: null, crestKind: '',
-  bannerAssetId: null, bannerKind: ''
+/* ---- identité des trois maisons ----
+   La Guilde garde la clé « guild » d'origine ; Hourglass et Sphere ont
+   la leur. Même forme pour les trois : nom, devise, présentation,
+   blason et bannière. */
+export const houseDefault = key => {
+  const h = houseByKey(key);
+  return {
+    k: h.kv, key: h.key,
+    name: h.key === 'guild' ? "Anim'Connect" : h.name,
+    motto: h.motto, desc: h.desc,
+    crestAssetId: null, crestKind: '',
+    bannerAssetId: null, bannerKind: ''
+  };
 };
 
-export async function ensureGuild() {
-  const cur = await get('kv', 'guild');
+export const GUILD_DEFAULT = houseDefault('guild');
+
+export async function ensureHouse(key) {
+  const h = houseByKey(key);
+  const cur = await get('kv', h.kv);
   if (cur && cur.name) return cur;
-  const g = { ...GUILD_DEFAULT, ...(cur || {}), k: 'guild' };
-  await put('kv', g);
-  return g;
+  const made = { ...houseDefault(key), ...(cur || {}), k: h.kv };
+  await put('kv', made);
+  return made;
 }
 
-export const saveGuild = g => put('kv', { ...g, k: 'guild' });
+export const saveHouse = (key, o) => put('kv', { ...o, k: houseByKey(key).kv });
+
+export async function ensureHouses() {
+  for (const h of HOUSES) await ensureHouse(h.key);
+}
+
+/* Anciens noms, conservés pour la Guilde. */
+export const ensureGuild = () => ensureHouse('guild');
+export const saveGuild = g => saveHouse('guild', g);
 
 /* ---- personas ----------------------------------------------------
    Une seule famille de fiches. Le rôle (utilisateur, IA assistante,
@@ -275,6 +289,13 @@ export async function rootForProject(projectOrId) {
 }
 
 export const isRootGroup = id => ROOTS.some(r => r.id === id);
+
+/* Tous les groupes d'une branche, à toute profondeur, racine comprise. */
+export async function groupTreeIds(groupId) {
+  const ids = [groupId];
+  for (const c of await childGroups(groupId)) ids.push(...await groupTreeIds(c.id));
+  return ids;
+}
 
 /* compte récursif : sous-groupes et projets contenus à tous les niveaux */
 export async function countDeep(groupId) {

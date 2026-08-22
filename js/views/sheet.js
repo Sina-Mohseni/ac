@@ -218,7 +218,7 @@ export async function personasHTML() {
     <div class="fnote" style="margin:-6px 0 14px">${esc(root.desc)}</div>`;
 
   /* deuxième bande : les sous-groupes de la racine choisie */
-  if (root.sourceRoot || subs.length) {
+  {
     h += `<div class="frt">Sous-groupes de ${esc(root.name)}</div>
       <div class="roster" aria-label="Sous-groupes">`;
     h += await milieuMedallion({ id: '', name: 'Tous' }, !S.subMilieuId, 0, 'all');

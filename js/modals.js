@@ -293,17 +293,20 @@ export async function mMilieu(id, parentId) {
       ${m ? `data-id="${m.id}"` : ''} data-parent="${esc(parent)}">Enregistrer</button></div>`);
 }
 
-export async function mGuild() {
-  const { ensureGuild } = await import('./db.js');
-  const g = await ensureGuild();
+export async function mGuild(key) {
+  const { ensureHouse } = await import('./db.js');
+  const { houseByKey } = await import('./state.js');
+  const H = houseByKey(key || 'guild');
+  const g = await ensureHouse(H.key);
   D.guild = g;
+  D.houseKey = H.key;
   const crest = await assetURL(g.crestAssetId);
   const banner = await assetURL(g.bannerAssetId);
 
-  modal(`<div class="hd"><h2 style="margin:0">Blason de la guilde</h2>${closeBtn}</div>
-    <div class="tiny muted">Le nom, la devise et les images qui ouvrent la Grande Salle.</div>
-    <label class="lbl">Nom de la guilde</label>
-    <input id="uName" value="${esc(g.name)}" placeholder="ANIM'CONNECT">
+  modal(`<div class="hd"><h2 style="margin:0">Blason · ${esc(H.title)}</h2>${closeBtn}</div>
+    <div class="tiny muted">Le nom, la devise et les images qui ouvrent cette page.</div>
+    <label class="lbl">Nom</label>
+    <input id="uName" value="${esc(g.name)}" placeholder="${esc(H.name)}">
     <label class="lbl">Devise</label>
     <input id="uMotto" value="${esc(g.motto || '')}" placeholder="Lire, voir, entendre, vivre, interagir.">
     <label class="lbl">Présentation</label>

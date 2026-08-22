@@ -1,4 +1,4 @@
-import { openDB, ensureRootCategories, ensureGuild, ensureMilieux, migratePersonas } from './db.js';
+import { openDB, ensureRootCategories, ensureHouses, ensureMilieux, migratePersonas } from './db.js';
 import { initPlayer } from './player.js';
 import { initActions } from './actions.js';
 import { render } from './router.js';
@@ -9,7 +9,7 @@ import { initTheme } from './theme.js';
   try {
     await openDB();
     await ensureRootCategories();
-    await ensureGuild();
+    await ensureHouses();
     await ensureMilieux();
     await migratePersonas();
   } catch (err) {
