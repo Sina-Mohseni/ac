@@ -1,11 +1,11 @@
 import { S } from './state.js';
-import { setNav, refreshCurrents } from './ui.js';
+import { setNav, refreshCurrents, modal } from './ui.js';
 import { get, groupPath } from './db.js';
 import { viewGroup } from './views/library.js';
 import { viewProject } from './views/project.js';
 import { viewTracker } from './views/tracker.js';
 import { viewGuild } from './views/guild.js';
-import { viewPersonas } from './views/sheet.js';
+import { personasHTML } from './views/sheet.js';
 import { viewExperience, viewVault, viewMusic, viewSettings } from './views/pages.js';
 
 const VIEWS = {
@@ -13,21 +13,33 @@ const VIEWS = {
   group: viewGroup,
   project: viewProject,
   tracker: viewTracker,
-  personas: viewPersonas,
   music: viewMusic,
   settings: viewSettings,
   experience: viewExperience,
   vault: viewVault
 };
 
+/* Le tiroir garde sa position de lecture d'un redessin à l'autre,
+   mais s'ouvre toujours par le haut. */
+let sheetWasOpen = false;
+
 export async function render() {
   /* « library » n'est plus une vue à part : c'est une salle de la Guilde.
-     « profiles » a fusionné avec les personas. */
+     Les personas ne sont plus une page : ils montent en tiroir. */
   if (S.view === 'library') { S.view = 'tracker'; S.trackTab = 'library'; }
-  if (S.view === 'profiles') S.view = 'personas';
+  if (S.view === 'personas' || S.view === 'profiles') { S.view = 'guild'; S.personaSheet = true; }
   setNav(S.view);
   const fn = VIEWS[S.view] || viewGuild;
   await fn();
+  /* Le tiroir des personas se redessine avec la page qui le porte. */
+  if (S.personaSheet) {
+    modal(await personasHTML());
+    if (!sheetWasOpen) {
+      const sh = document.getElementById('sheet');
+      if (sh) sh.scrollTop = 0;
+    }
+  }
+  sheetWasOpen = S.personaSheet;
   await refreshCurrents();
   window.scrollTo({ top: 0 });
 }

@@ -42,13 +42,13 @@ export function setNav(view) {
      gardent l'icône d'accueil allumée. */
   const map = {
     library: 'guild', tracker: 'guild', group: 'guild',
-    project: 'guild', experience: 'guild', vault: 'guild',
-    profiles: 'personas'
+    project: 'guild', experience: 'guild', vault: 'guild'
   };
   const active = map[view] || view;
   document.querySelectorAll('.hnav button').forEach(b => b.classList.toggle('on', b.dataset.view === active));
   document.querySelectorAll('.fnav-tools button').forEach(b => b.classList.toggle('on', b.dataset.view === active));
-  document.querySelectorAll('.fnav-current button').forEach(b => b.classList.toggle('on', b.dataset.view === active));
+  const persona = document.getElementById('btnCurPersona');
+  if (persona) persona.classList.toggle('on', !!S.personaSheet);
   document.querySelectorAll('.fnav-roots button').forEach(b => b.classList.toggle('on', b.dataset.root === S.activeRootId));
 }
 
