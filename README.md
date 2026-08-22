@@ -25,7 +25,8 @@ disponibles comme alias des jetons Material.
 ### Fond d'écran
 
 Le fond d'écran se charge depuis la **Guilde** : le cadre à gauche du nom ouvre un tiroir qui demande ce
-que l'image doit habiller — le **blason** ou le **fond d'écran** — et permet de retirer l'un ou l'autre.
+que l'image doit habiller — le **blason**, qui ouvre la fenêtre du blason (nom, devise, présentation,
+image et bannière), ou le **fond d'écran**, chargé directement — et permet de retirer l'un ou l'autre.
 Une seule image ou vidéo de fond, la même de jour comme de nuit. Le fichier est rangé tel quel dans le
 coffre et **occupe tout l'écran, à pleine opacité**, sans voile par-dessus. Une page qui impose déjà son
 propre fond — bannière de projet, image d'une fiche — garde la priorité ; le fond d'écran reprend la main
@@ -131,7 +132,8 @@ La seule limite est le quota du navigateur, lisible dans la salle Coffre.
 - **Ouverture** : la Guilde, et non plus le calendrier.
 - **Guilde** : bannière et blason, sceau de renom calculé sur le contenu réel, quatre plaques vers les
   salles, cercle des profils et personas, registre des jalons, quêtes et projets récents. Le cadre du
-  blason, à gauche du nom, ouvre le tiroir des images : blason ou fond d'écran, avec leurs retraits.
+  blason, à gauche du nom, est la seule porte vers les images de la guilde : un tiroir mène soit à la
+  fenêtre du blason, soit au fond d'écran, avec leurs retraits.
 - **Salles** : Bibliothèque, Calendrier, Quêtes et Coffre gardent leur barre d'icônes et un retour Guilde.
 - **En-tête** : l'icône Accueil ramène à la Guilde ; Musique et Paramètres à droite.
 - **Footer** : profil et persona IA actifs à gauche, avec leur portrait ; Histoires, Jeux, Expo et Personas

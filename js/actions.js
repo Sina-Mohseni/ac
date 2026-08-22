@@ -526,9 +526,8 @@ const A = {
     modal(`<div class="hd"><h2 style="margin:0">Images de la Guilde</h2><div class="sp"></div>
       <button class="btn-sm btn-ghost" data-act="closeModal">Fermer</button></div>
       <div class="tiny muted" style="margin-bottom:12px">Choisis ce que cette image doit habiller.</div>` +
-      opt('pickCrestFile', '', crestIcon, 'Blason',
-        g.crestAssetId ? 'Remplacer l\'image du cadre, à côté du nom' : 'Image du cadre, à côté du nom',
-        'imgpick') +
+      opt('editGuild', '', crestIcon, 'Blason',
+        'Nom, devise, présentation, image du blason et bannière', 'imgpick') +
       opt('pickWall', '', wallIcon, "Fond d'écran",
         wall.assetId ? "Remplacer l'image de fond de l'application" : "Image de fond de toute l'application",
         'imgpick arcane') +
@@ -538,19 +537,6 @@ const A = {
             ${wall.assetId ? '<button class="btn-sm btn-ghost btn-danger" data-act="clearWall">Retirer le fond d\'écran</button>' : ''}
           </div>`
         : ''));
-  },
-  pickCrestFile: () => {
-    /* Le sélecteur s'ouvre dans le geste de l'utilisateur ; la fenêtre se ferme ensuite. */
-    pickFiles(false, async f => {
-      const { ensureGuild } = await import('./db.js');
-      const g = await ensureGuild();
-      g.crestAssetId = await saveAsset(f[0]);
-      g.crestKind = f[0].type;
-      await saveGuild(g);
-      toast('Blason mis à jour');
-      await render();
-    });
-    return closeModal();
   },
   clearCrest: async () => {
     const { ensureGuild } = await import('./db.js');

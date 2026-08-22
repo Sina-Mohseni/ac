@@ -88,7 +88,6 @@ export async function viewGuild() {
           <div class="xp">${r.xp} / ${r.next} points de renom</div>
           <div class="bar"><i style="width:${r.pct}%"></i></div>
         </div>
-        <button class="btn-sm btn-ghost" data-act="editGuild">Blason</button>
       </div>
     </div>
   </section>`;
