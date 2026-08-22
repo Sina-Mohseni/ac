@@ -86,6 +86,21 @@ export const getKV = async (k, fallback) => {
 };
 export const setKV = (k, v) => put('kv', { k, v });
 
+/* ---- fonds d'écran : un pour le jour, un pour la nuit ---- */
+export const getWallpapers = async () => ({ light: {}, dark: {}, ...(await getKV('wallpapers', {})) });
+
+export const getWallpaper = async theme => {
+  const w = await getWallpapers();
+  return w[theme === 'dark' ? 'dark' : 'light'] || {};
+};
+
+export async function setWallpaper(theme, assetId, kind) {
+  const w = await getWallpapers();
+  w[theme === 'dark' ? 'dark' : 'light'] = assetId ? { assetId, kind: kind || '' } : {};
+  await setKV('wallpapers', w);
+  return w;
+}
+
 /* ---- identité de la guilde ---- */
 export const GUILD_DEFAULT = {
   k: 'guild',

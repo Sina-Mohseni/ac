@@ -1,7 +1,8 @@
 import {
   get, put, del, all, byIdx, saveAsset, assetURL,
   deleteGroupTree, isProject, rootForGroup, rootForProject, isRootGroup,
-  saveGuild, putChar, delChar, setActiveChar, getActiveChar, listChars
+  saveGuild, putChar, delChar, setActiveChar, getActiveChar, listChars,
+  setWallpaper
 } from './db.js';
 import { S, PIPE, ROOTS, rootInfo } from './state.js';
 import { closeModal, modal, opt } from './ui.js';
@@ -17,6 +18,8 @@ import {
   CH, blankChar, collectCharDraft, refreshSheet, persistDraft
 } from './views/sheet.js';
 import { applyTheme, cycleTheme, themeLabel } from './theme.js';
+import { getAI, saveAI, clearAI, listModels, chat, providerOf } from './ai.js';
+import { setAiOut } from './views/pages.js';
 
 function branchDrawer(rootId) {
   const root = rootInfo(rootId) || ROOTS[0];
@@ -641,6 +644,104 @@ const A = {
     return render();
   },
 
+  /* ---------- fonds d'écran jour / nuit ---------- */
+  pickWall: t => {
+    const theme = t.dataset.theme === 'dark' ? 'dark' : 'light';
+    pickFiles(false, async f => {
+      const id = await saveAsset(f[0]);
+      await setWallpaper(theme, id, f[0].type);
+      toast(`Fond de ${theme === 'dark' ? 'nuit' : 'jour'} enregistré`);
+      await render();
+    });
+  },
+  clearWall: async t => {
+    const theme = t.dataset.theme === 'dark' ? 'dark' : 'light';
+    await setWallpaper(theme, null);
+    toast(`Fond de ${theme === 'dark' ? 'nuit' : 'jour'} retiré`);
+    return render();
+  },
+
+  /* ---------- intelligence artificielle (BYOK) ---------- */
+  aiProvider: async t => {
+    const cfg = await getAI();
+    if (t.value === cfg.provider) return;
+    /* La clé d'un fournisseur n'a pas de sens chez un autre : on repart à zéro. */
+    await saveAI({ provider: t.value, apiKey: '', baseUrl: '', model: '', models: [], checkedAt: 0 });
+    setAiOut(null);
+    toast(`Fournisseur : ${providerOf(t.value).name}`);
+    return render();
+  },
+  aiSaveKey: async () => {
+    const cfg = await getAI();
+    const keyField = document.getElementById('aiKey');
+    const baseField = document.getElementById('aiBase');
+    const typed = keyField ? keyField.value.trim() : '';
+    const next = {
+      ...cfg,
+      apiKey: typed || cfg.apiKey,
+      baseUrl: baseField ? baseField.value.trim() : cfg.baseUrl
+    };
+    if (!next.apiKey) { toast('Saisis une clé API'); return; }
+    await saveAI(next);
+    if (keyField) keyField.value = '';
+    toast('Clé enregistrée sur cet appareil');
+    return A.aiLoadModels();
+  },
+  aiLoadModels: async () => {
+    const cfg = await getAI();
+    if (!cfg.apiKey) { toast('Aucune clé enregistrée'); return; }
+    toast('Chargement des modèles…');
+    try {
+      const models = await listModels(cfg);
+      const keep = models.some(m => m.id === cfg.model) ? cfg.model : '';
+      await saveAI({ ...cfg, models, model: keep });
+      setAiOut(null);
+      toast(`${models.length} modèle(s) disponibles`);
+    } catch (err) {
+      setAiOut(err.message, true);
+    }
+    return render();
+  },
+  aiPickModel: async t => {
+    const cfg = await getAI();
+    await saveAI({ ...cfg, model: t.value });
+    if (t.value) toast(`Modèle : ${t.value}`);
+    return render();
+  },
+  aiSetModelFree: async () => {
+    const f = document.getElementById('aiModelFree');
+    const v = f ? f.value.trim() : '';
+    if (!v) { toast('Saisis un identifiant de modèle'); return; }
+    const cfg = await getAI();
+    await saveAI({ ...cfg, model: v });
+    toast(`Modèle : ${v}`);
+    return render();
+  },
+  aiTest: async () => {
+    const cfg = await getAI();
+    toast('Essai en cours…');
+    try {
+      const reply = await chat(cfg, [
+        { role: 'system', content: "Tu réponds en français, en une phrase courte." },
+        { role: 'user', content: "Présente-toi en une phrase : qui es-tu et quel modèle es-tu ?" }
+      ], { maxTokens: 128 });
+      setAiOut(reply || '(réponse vide)', false);
+      await saveAI({ ...cfg, checkedAt: Date.now() });
+      toast('Le modèle a répondu');
+    } catch (err) {
+      setAiOut(err.message, true);
+      toast('Échec de l\'essai');
+    }
+    return render();
+  },
+  aiClear: async () => {
+    if (!confirm("Effacer la clé API et le modèle choisi de cet appareil ?")) return;
+    await clearAI();
+    setAiOut(null);
+    toast('Clé effacée');
+    return render();
+  },
+
   /* ---------- coffre ---------- */
   persist: async () => {
     const ok = await navigator.storage.persist();
@@ -662,6 +763,14 @@ export function initActions() {
     const fn = A[t.dataset.act];
     if (!fn) return;
     e.stopPropagation();
+    try { await fn(t, e); }
+    catch (err) { console.error(err); toast('Erreur : ' + err.message); }
+  });
+  document.addEventListener('change', async e => {
+    const t = e.target.closest('[data-change]');
+    if (!t) return;
+    const fn = A[t.dataset.change];
+    if (!fn) return;
     try { await fn(t, e); }
     catch (err) { console.error(err); toast('Erreur : ' + err.message); }
   });

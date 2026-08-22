@@ -6,8 +6,6 @@ import { app } from './ui.js';
 import { initTheme } from './theme.js';
 
 (async function boot() {
-  initTheme();
-
   try {
     await openDB();
     await ensureRootCategories();
@@ -19,6 +17,10 @@ import { initTheme } from './theme.js';
       (<span class="mono">python -m http.server 8080</span>) et vérifie que la navigation privée est désactivée.</div>`;
     return;
   }
+
+  /* Le thème est déjà appliqué par le script de tête ; on branche ici le
+     suivi du système et le fond d'écran, une fois la base ouverte. */
+  initTheme();
 
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
