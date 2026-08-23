@@ -85,13 +85,18 @@ export function setNav(view) {
   const byRoot = { 'root-histoires': 'hourglass', 'root-jeux': 'sphere' };
   const inner = ['library', 'tracker', 'group', 'project', 'experience', 'vault',
     'subjects', 'scenario', 'eye', 'gates', 'session'];
-  const active = inner.includes(view)
-    ? (byRoot[S.activeRootId] || houseByKey(S.houseKey).view)
-    : view;
-  document.querySelectorAll('.hnav button').forEach(b => b.classList.toggle('on', b.dataset.view === active));
+  /* Le Coffre est commun aux trois maisons : sur sa salle, aucune maison
+     n'est mise en avant. */
+  const vaultOpen = view === 'tracker' && S.trackTab === 'vault';
+  const active = vaultOpen ? ''
+    : (inner.includes(view) ? (byRoot[S.activeRootId] || houseByKey(S.houseKey).view) : view);
+  document.querySelectorAll('#hdr .hbar button').forEach(b => b.classList.toggle('on', b.dataset.view === active && !b.dataset.tab));
 
   const persona = document.getElementById('btnCurPersona');
   if (persona) persona.classList.toggle('on', view === 'personas');
+  /* Le Coffre vit dans l'en-tête : il s'allume sur sa propre salle. */
+  const vault = document.getElementById('btnVault');
+  if (vault) vault.classList.toggle('on', view === 'tracker' && S.trackTab === 'vault');
 
 }
 
