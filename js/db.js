@@ -1,8 +1,8 @@
 import { uid } from './utils.js';
-import { ROOTS, MILIEU_ROOTS, MILIEU_GUILDE, HOUSES, houseByKey } from './state.js';
+import { ROOTS, GROUP_DEFAULT, HOUSES, houseByKey } from './state.js';
 
 export const DBN = 'GRIMOIRE_ANIMCONNECT';
-const DBV = 5;
+const DBV = 6;
 let DB = null;
 
 export function openDB() {
@@ -26,6 +26,9 @@ export function openDB() {
       mk('profiles');
       mk('personas', ['milieuId']);
       mk('milieux');
+      mk('subjects', ['kind', 'parentId']);
+      mk('scenarios', ['subjectId']);
+      mk('sessions');
       if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv', { keyPath: 'k' });
     };
     r.onsuccess = () => { DB = r.result; res(DB); };
@@ -103,6 +106,57 @@ export async function getWallpaper() {
 export const setWallpaper = (assetId, kind) =>
   setKV('wallpaper', assetId ? { assetId, kind: kind || '' } : {});
 
+/* ---- sujets : univers, mondes, ères, époques, sagas, éléments ---- */
+export const listSubjects = async (kind, parentId) => {
+  let l = await all('subjects');
+  if (kind) l = l.filter(x => x.kind === kind);
+  if (parentId !== undefined) l = l.filter(x => (x.parentId || '') === (parentId || ''));
+  return l.sort((a, b) => (a.at || 0) - (b.at || 0));
+};
+
+export const getSubject = id => get('subjects', id);
+export const putSubject = x => put('subjects', x);
+
+/* Supprime un sujet et tout ce qui en dépend, scénarios compris. */
+export async function delSubjectTree(id) {
+  for (const c of (await all('subjects')).filter(x => x.parentId === id)) await delSubjectTree(c.id);
+  for (const sc of await byIdx('scenarios', 'subjectId', id)) await del('scenarios', sc.id);
+  /* Un élément peut courir sur plusieurs sagas : on le détache. */
+  for (const x of await all('subjects')) {
+    if ((x.sagaIds || []).includes(id)) await put('subjects', { ...x, sagaIds: x.sagaIds.filter(s => s !== id) });
+  }
+  await del('subjects', id);
+}
+
+/* Chaîne d'un sujet, de l'univers jusqu'à lui. */
+export async function subjectPath(id) {
+  const path = [];
+  let cur = id;
+  while (cur) {
+    const x = await get('subjects', cur);
+    if (!x) break;
+    path.unshift(x);
+    cur = x.parentId || null;
+    if (path.length > 12) break;
+  }
+  return path;
+}
+
+/* ---- scénarios : la lifeline d'un sujet ---- */
+export const listScenarios = async subjectId =>
+  (subjectId ? await byIdx('scenarios', 'subjectId', subjectId) : await all('scenarios'))
+    .sort((a, b) => (a.at || 0) - (b.at || 0));
+
+export const getScenario = id => get('scenarios', id);
+export const putScenario = x => put('scenarios', x);
+export const delScenario = id => del('scenarios', id);
+
+/* ---- sessions vécues (Eye et Gates) ---- */
+export const listSessions = async () => (await all('sessions')).sort((a, b) => (b.at || 0) - (a.at || 0));
+export const putSession = x => put('sessions', x);
+export const getSession = id => get('sessions', id);
+export const delSession = id => del('sessions', id);
+
 /* ---- identité des trois maisons ----
    La Guilde garde la clé « guild » d'origine ; Hourglass et Sphere ont
    la leur. Même forme pour les trois : nom, devise, présentation,
@@ -144,9 +198,9 @@ export const saveGuild = g => saveHouse('guild', g);
    IA vivante) se choisit sur la fiche ; les milieux les rangent.
    ------------------------------------------------------------------ */
 
-export const listPersonas = async milieuId => {
+export const listPersonas = async groupId => {
   const all_ = (await all('personas')).sort((a, b) => (a.at || 0) - (b.at || 0));
-  return milieuId ? all_.filter(c => (c.milieuId || MILIEU_GUILDE.id) === milieuId) : all_;
+  return groupId ? all_.filter(c => (c.milieuId || GROUP_DEFAULT.id) === groupId) : all_;
 };
 
 export const getPersona = id => get('personas', id);
@@ -156,40 +210,31 @@ export const delPersona = id => del('personas', id);
 export const getActivePersona = () => getKV('active-persona', null);
 export const setActivePersona = id => setKV('active-persona', id);
 
-/* ---- milieux : les dossiers des personas ----
-   Trois racines fixes, et des sous-groupes libres sous chacune. */
-export const listMilieux = async () => {
-  const stored = await all('milieux');
-  const roots = MILIEU_ROOTS.map(r => ({ ...r, ...(stored.find(m => m.id === r.id) || {}), system: true }));
-  const subs = stored.filter(m => m.parentId).sort((a, b) => (a.at || 0) - (b.at || 0));
-  return [...roots, ...subs];
+/* ---- groupes de personas ----
+   Un seul niveau, libre. Le groupe « Membres » existe toujours. */
+export const listPersonaGroups = async () => {
+  const l = (await all('milieux')).filter(m => !m.house).sort((a, b) => (a.at || 0) - (b.at || 0));
+  return l.length ? l : [GROUP_DEFAULT];
 };
 
-export const listSubMilieux = async parentId =>
-  (await all('milieux')).filter(m => m.parentId === parentId).sort((a, b) => (a.at || 0) - (b.at || 0));
+export const getPersonaGroup = async id => (await listPersonaGroups()).find(m => m.id === id) || null;
+export const putPersonaGroup = m => put('milieux', m);
 
-export const getMilieu = async id => (await listMilieux()).find(m => m.id === id) || null;
-export const putMilieu = m => put('milieux', m);
-
-/* Personas d'un milieu : ceux qui en viennent, et ceux qui y passent.
+/* Personas d'un groupe : ceux qui en viennent, et ceux qui y passent.
    Un persona rangé ailleurs peut très bien tenir un rôle ici. */
-export async function personasOf(milieuId, withSubs) {
-  const subs = withSubs ? (await listSubMilieux(milieuId)).map(m => m.id) : [];
-  const ids = [milieuId, ...subs];
+export async function personasOf(groupId) {
+  if (!groupId) return listPersonas();
   return (await listPersonas()).filter(c =>
-    ids.includes(c.milieuId || MILIEU_GUILDE.id) || (c.alsoIn || []).some(x => ids.includes(x)));
+    (c.milieuId || GROUP_DEFAULT.id) === groupId || (c.alsoIn || []).includes(groupId));
 }
 
-/* Le persona vient-il d'ici, ou n'y est-il qu'invité ? */
-export const isGuestIn = (c, milieuId) => (c.milieuId || MILIEU_GUILDE.id) !== milieuId;
-
-export async function delMilieu(id) {
-  if (MILIEU_ROOTS.some(r => r.id === id)) return false;
-  const sub = await get('milieux', id);
-  const fallback = (sub && sub.parentId) || MILIEU_GUILDE.id;
+export async function delPersonaGroup(id) {
+  const rest = (await listPersonaGroups()).filter(m => m.id !== id);
+  if (!rest.length) return false;
+  const fallback = rest[0].id;
   for (const c of await listPersonas()) {
     let touched = false;
-    if ((c.milieuId || MILIEU_GUILDE.id) === id) { c.milieuId = fallback; touched = true; }
+    if ((c.milieuId || GROUP_DEFAULT.id) === id) { c.milieuId = fallback; touched = true; }
     if ((c.alsoIn || []).includes(id)) { c.alsoIn = c.alsoIn.filter(x => x !== id); touched = true; }
     if (touched) await putPersona(c);
   }
@@ -197,11 +242,27 @@ export async function delMilieu(id) {
   return true;
 }
 
-/* Les trois racines existent toujours. */
-export async function ensureMilieux() {
-  for (const r of MILIEU_ROOTS) {
-    const cur = await get('milieux', r.id);
-    await put('milieux', { ...r, ...(cur || {}), id: r.id, name: (cur && cur.name) || r.name, system: true });
+/* Le groupe d'origine existe toujours ; les anciens milieux, hérités de
+   la structure Guilde / Hourglass / Sphere, deviennent des groupes. */
+export async function ensurePersonaGroups() {
+  const stored = await all('milieux');
+  const roots = ['milieu-guilde', 'milieu-hourglass', 'milieu-sphere'];
+  const kept = stored.filter(m => !roots.includes(m.id));
+  for (const m of stored) {
+    if (!roots.includes(m.id)) {
+      if (m.parentId || m.house) await put('milieux', { ...m, parentId: undefined, house: undefined });
+      continue;
+    }
+    await del('milieux', m.id);
+  }
+  if (!kept.length) await put('milieux', { ...GROUP_DEFAULT });
+  const ids = (await listPersonaGroups()).map(m => m.id);
+  const home = ids[0];
+  for (const c of await listPersonas()) {
+    const cur = c.milieuId || '';
+    const also = (c.alsoIn || []).filter(x => ids.includes(x));
+    if (ids.includes(cur) && also.length === (c.alsoIn || []).length) continue;
+    await putPersona({ ...c, milieuId: ids.includes(cur) ? cur : home, alsoIn: also });
   }
 }
 
@@ -213,7 +274,7 @@ export async function migratePersonas() {
 
   for (const c of await all('profiles')) {
     const { kind, ...rest } = c;
-    await put('personas', { ...rest, role: 'user', milieuId: c.milieuId || MILIEU_GUILDE.id });
+    await put('personas', { ...rest, role: 'user', milieuId: c.milieuId || GROUP_DEFAULT.id });
     await del('profiles', c.id);
   }
   for (const c of await all('personas')) {
@@ -222,7 +283,7 @@ export async function migratePersonas() {
     await put('personas', {
       ...rest,
       role: c.role || (c.kind === 'user' ? 'user' : 'ai-assistant'),
-      milieuId: c.milieuId || MILIEU_GUILDE.id
+      milieuId: c.milieuId || GROUP_DEFAULT.id
     });
   }
 

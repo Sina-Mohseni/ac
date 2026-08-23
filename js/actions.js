@@ -2,9 +2,11 @@ import {
   get, put, del, all, byIdx, saveAsset, assetURL,
   deleteGroupTree, isProject, rootForGroup, rootForProject, isRootGroup,
   saveHouse, putPersona, delPersona, setActivePersona, getActivePersona, listPersonas,
-  listMilieux, listSubMilieux, putMilieu, delMilieu, setWallpaper
+  listPersonaGroups, putPersonaGroup, delPersonaGroup, setWallpaper,
+  putSubject, getSubject, delSubjectTree, listScenarios, getScenario, putScenario, delScenario,
+  putSession, getSession
 } from './db.js';
-import { S, PIPE, ROOTS, rootInfo, MILIEU_ROOTS, MILIEU_GUILDE, milieuRoot, houseOf, houseByKey } from './state.js';
+import { S, PIPE, ROOTS, rootInfo, GROUP_DEFAULT, houseOf, houseByKey } from './state.js';
 import { closeModal, modal, opt, pickOf, openPickList, closePickList } from './ui.js';
 import { pickFiles, probeDuration, toast, uid, today, esc } from './utils.js';
 import { audio, PL, loadQueue, playIndex, seekGlobal, globalTime, stopAll, renderBand } from './player.js';
@@ -12,7 +14,8 @@ import { render, goBack } from './router.js';
 import { viewProject } from './views/project.js';
 import { viewTracker } from './views/tracker.js';
 import {
-  D, mGroup, mProject, mEvent, mElement, mTrack, mCal, mGoal, mGuild, mMilieu, collectGoalDraft
+  D, mGroup, mProject, mEvent, mElement, mTrack, mCal, mGoal, mGuild, mMilieu,
+  mSubject, mScenario, mBeat, collectGoalDraft
 } from './modals.js';
 import {
   CH, blankChar, collectCharDraft, refreshSheet, persistDraft
@@ -72,7 +75,16 @@ const A = {
      à branche ouvre directement cette branche. */
   hall: async t => {
     const H = houseByKey(S.houseKey);
-    S.trackTab = t.dataset.t;
+    const k = t.dataset.t;
+    /* Les salles de la Tour sont des pages à part entière. */
+    if (['subjects', 'scenario', 'eye', 'gates'].includes(k)) {
+      if (t.dataset.subject) { S.subjectId = t.dataset.subject; S.scenarioId = null; }
+      if (t.dataset.scenario) { S.liveScenarioId = t.dataset.scenario; }
+      S.view = k;
+      S.sessionId = null;
+      return render();
+    }
+    S.trackTab = k;
     if (t.dataset.t === 'library' && H.rootId) {
       S.activeRootId = H.rootId;
       S.branchMode = S.branchMode || 'creation';
@@ -583,7 +595,7 @@ const A = {
 
   /* ---------- fiches : profils utilisateur et personas IA ---------- */
   newChar: async () => {
-    const c = blankChar(S.subMilieuId || S.milieuRootId || MILIEU_GUILDE.id);
+    const c = blankChar(S.personaGroupId || GROUP_DEFAULT.id);
     await putPersona(c);
     CH.draft = c;
     S.personaId = c.id;
@@ -641,7 +653,8 @@ const A = {
     CH.draft.milieuId = t.value;
     CH.draft.alsoIn = (CH.draft.alsoIn || []).filter(x => x !== t.value);
     await persistDraft();
-    toast('Milieu d\'origine mis à jour');
+    S.personaGroupId = t.value;
+    toast('Groupe mis à jour');
     return render();
   },
   toggleAlsoIn: async t => {
@@ -654,87 +667,235 @@ const A = {
     return render();
   },
 
-  /* ---------- milieux ---------- */
+
+  /* ---------- Sujets : la chaîne de la Tour ---------- */
+  openSubject: t => {
+    S.subjectId = t.dataset.id || null;
+    S.view = 'subjects';
+    return render();
+  },
+  newSubject: t => mSubject(null, t.dataset.kind, t.dataset.parent || ''),
+  editSubject: t => mSubject(t.dataset.id),
+  toggleSaga: t => {
+    const cur = D.subject.sagaIds || [];
+    const id = t.dataset.id;
+    D.subject.sagaIds = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
+    t.classList.toggle('on');
+  },
+  saveSubject: async () => {
+    const x = D.subject;
+    x.name = document.getElementById('sjName').value.trim() || 'Sans nom';
+    x.desc = document.getElementById('sjDesc').value;
+    await putSubject(x);
+    await closeModal();
+    S.subjectId = x.id;
+    S.view = 'subjects';
+    toast('Sujet enregistré');
+    return render();
+  },
+  delSubjectAsk: async t => {
+    if (!confirm('Supprimer ce sujet ? Tout ce qui en dépend part avec lui, scénarios compris.')) return;
+    const x = await getSubject(t.dataset.id);
+    await delSubjectTree(t.dataset.id);
+    S.subjectId = (x && x.parentId) || null;
+    toast('Sujet supprimé');
+    return render();
+  },
+
+  /* ---------- Scénario : la lifeline ---------- */
+  pickScenarioSubject: t => {
+    S.subjectId = t.value || null;
+    S.scenarioId = null;
+    S.view = 'scenario';
+    return render();
+  },
+  newScenario: t => mScenario(null, t.dataset.subject || S.subjectId),
+  editScenario: t => mScenario(t.dataset.id),
+  saveScenario: async () => {
+    const x = D.scenario;
+    x.name = document.getElementById('scName').value.trim() || 'Scénario sans titre';
+    x.desc = document.getElementById('scDesc').value;
+    await putScenario(x);
+    await closeModal();
+    S.scenarioId = x.id;
+    S.subjectId = x.subjectId;
+    S.view = 'scenario';
+    toast('Scénario enregistré');
+    return render();
+  },
+  openScenario: t => {
+    S.scenarioId = t.dataset.id;
+    S.view = 'scenario';
+    return render();
+  },
+  delScenarioAsk: async t => {
+    if (!confirm('Supprimer ce scénario et sa lifeline ?')) return;
+    await delScenario(t.dataset.id);
+    S.scenarioId = null;
+    toast('Scénario supprimé');
+    return render();
+  },
+  newBeat: t => mBeat(t.dataset.id, null),
+  editBeat: t => mBeat(t.dataset.id, t.dataset.i),
+  saveBeat: async () => {
+    const { scenarioId, index } = D.beat;
+    const sc = await getScenario(scenarioId);
+    if (!sc) return;
+    const b = {
+      title: document.getElementById('btTitle').value.trim() || 'Moment',
+      text: document.getElementById('btText').value
+    };
+    sc.beats = sc.beats || [];
+    if (index === null) sc.beats.push(b); else sc.beats[index] = b;
+    await putScenario(sc);
+    await closeModal();
+    S.scenarioId = sc.id;
+    toast('Moment enregistré');
+    return render();
+  },
+  moveBeat: async t => {
+    const sc = await getScenario(t.dataset.id);
+    if (!sc) return;
+    const i = +t.dataset.i, j = i + (+t.dataset.d);
+    if (j < 0 || j >= sc.beats.length) return;
+    [sc.beats[i], sc.beats[j]] = [sc.beats[j], sc.beats[i]];
+    await putScenario(sc);
+    return render();
+  },
+  delBeat: async t => {
+    const sc = await getScenario(t.dataset.id);
+    if (!sc) return;
+    sc.beats.splice(+t.dataset.i, 1);
+    await putScenario(sc);
+    return render();
+  },
+
+  /* ---------- Eye et Gates : entrer en scène ---------- */
+  rollScenario: async () => {
+    const playable = (await listScenarios()).filter(x => (x.beats || []).length);
+    if (!playable.length) { toast('Aucun scénario à vivre'); return; }
+    const pick = playable[Math.floor(Math.random() * playable.length)];
+    S.liveScenarioId = pick.id;
+    toast(`Le sort désigne « ${pick.name} »`);
+    return render();
+  },
+  clearLiveScenario: () => { S.liveScenarioId = null; return render(); },
+  pickLiveScenario: t => { S.liveScenarioId = t.value || null; return render(); },
+  pickLiveUser: t => {
+    const cast = S.liveCast || { user: '', ai: [] };
+    cast.user = t.value;
+    cast.ai = (cast.ai || []).filter(x => x !== t.value);
+    S.liveCast = cast;
+    return render();
+  },
+  toggleLiveAi: t => {
+    const cast = S.liveCast || { user: '', ai: [] };
+    const v = t.dataset.v;
+    cast.ai = (cast.ai || []).includes(v) ? cast.ai.filter(x => x !== v) : [...(cast.ai || []), v];
+    S.liveCast = cast;
+    return render();
+  },
+  startLive: async t => {
+    const cast = S.liveCast || {};
+    if (!S.liveScenarioId || !cast.user || !(cast.ai || []).length) return;
+    const ses = {
+      id: uid(), mode: t.dataset.mode, scenarioId: S.liveScenarioId,
+      user: cast.user, ai: cast.ai, beat: 0, log: [], at: Date.now()
+    };
+    await putSession(ses);
+    S.sessionId = ses.id;
+    S.view = 'session';
+    return render();
+  },
+  liveStep: async t => {
+    const ses = await getSession(S.sessionId);
+    if (!ses) return;
+    const sc = await getScenario(ses.scenarioId);
+    const n = ((sc && sc.beats) || []).length;
+    ses.beat = Math.max(0, Math.min(n - 1, (ses.beat || 0) + (+t.dataset.d)));
+    await putSession(ses);
+    return render();
+  },
+  liveSay: async () => {
+    const ses = await getSession(S.sessionId);
+    if (!ses) return;
+    const field = document.getElementById('liveSay');
+    const said = field ? field.value.trim() : '';
+    if (!said) { toast('Écris ce que tu fais'); return; }
+
+    const { castOptions, castLabel } = await import('./views/live.js');
+    const opts = await castOptions();
+    ses.log = ses.log || [];
+    ses.log.push({ who: 'user', name: castLabel(opts, ses.user), text: said });
+    await putSession(ses);
+    await render();
+
+    /* Les personas tenus par l'IA répondent, si un moteur est réglé. */
+    const { getAI, isReady, chat } = await import('./ai.js');
+    const cfg = await getAI();
+    if (!isReady(cfg)) {
+      toast('Aucun moteur d\'IA réglé : va dans Paramètres');
+      return;
+    }
+    const sc = await getScenario(ses.scenarioId);
+    const beat = ((sc && sc.beats) || [])[ses.beat || 0];
+    for (const v of ses.ai) {
+      const name = castLabel(opts, v);
+      try {
+        const reply = await chat(cfg, [
+          { role: 'system', content: `Tu joues « ${name} » dans une scène.`
+            + ` Scénario : ${sc ? sc.name : ''}. Moment : ${beat ? beat.title : ''}.`
+            + ` ${beat && beat.text ? beat.text : ''}`
+            + ` Réponds en français, en une réplique courte, à la première personne, sans commentaire.` },
+          ...ses.log.slice(-8).map(l => ({ role: l.who === 'user' ? 'user' : 'assistant', content: `${l.name} : ${l.text}` }))
+        ], { maxTokens: 300 });
+        ses.log.push({ who: 'ai', name, text: reply || '…' });
+      } catch (err) {
+        ses.log.push({ who: 'ai', name, text: `(silence — ${err.message})` });
+      }
+      await putSession(ses);
+    }
+    return render();
+  },
+  endLive: async () => {
+    if (!confirm('Clore la scène ? Son fil est conservé.')) return;
+    const mode = (await getSession(S.sessionId) || {}).mode || 'gates';
+    S.sessionId = null;
+    S.view = mode;
+    toast('Scène close');
+    return render();
+  },
+
+  /* ---------- groupes de personas ---------- */
   pickMilieu: t => {
-    S.milieuRootId = t.dataset.id;
-    S.subMilieuId = null;
+    S.personaGroupId = t.dataset.id;
     S.personaId = null;
     S.sheetEdit = false;
     S.view = 'personas';
     return render();
   },
-  pickSubMilieu: t => {
-    S.subMilieuId = t.dataset.id || null;
-    S.personaId = null;
-    S.sheetEdit = false;
-    S.view = 'personas';
-    return render();
-  },
-  /* Un sous-groupe se crée de toutes pièces, ou se reprend d'un monde
-     ou d'une catégorie de jeu déjà bâtis dans la Bibliothèque. */
-  newMilieu: async () => {
-    const root = milieuRoot(S.milieuRootId) || MILIEU_GUILDE;
-    if (!root.sourceRoot) return mMilieu(null, root.id);
-    const groups = (await all('groups')).filter(g => g.parentId === root.sourceRoot);
-    const taken = (await listSubMilieux(root.id)).map(m => m.sourceGroupId).filter(Boolean);
-    const free = groups.filter(g => !taken.includes(g.id));
-    const icon = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
-    modal(`<div class="hd"><h2 style="margin:0">Sous-groupe de ${esc(root.name)}</h2><div class="sp"></div>
-      <button class="btn-sm btn-ghost" data-act="closeModal">Fermer</button></div>
-      <div class="tiny muted" style="margin-bottom:12px">${esc(root.desc)}</div>` +
-      opt('newMilieuFree', `data-parent="${root.id}"`,
-        icon('<path d="M12 5v14M5 12h14"/>'), 'Créer un sous-groupe',
-        `Un ${esc(root.sourceOne)} qui n'existe pas encore dans la Bibliothèque`, 'imgpick') +
-      (free.length
-        ? `<div class="frt" style="margin:16px 0 8px">Reprendre des ${esc(root.sourceMany)}</div>` +
-          free.map(g => opt('addMilieuFromGroup', `data-parent="${root.id}" data-id="${g.id}"`,
-            icon('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
-            esc(g.name), esc(g.desc || `Reprendre ce ${root.sourceOne} comme milieu`), 'imgpick arcane')).join('')
-        : `<div class="fnote" style="margin-top:14px">Aucun ${esc(root.sourceOne)} disponible dans la
-           Bibliothèque : tous sont déjà repris, ou il n'y en a pas encore.</div>`));
-  },
-  newMilieuFree: async t => {
-    await closeModal();
-    return mMilieu(null, t.dataset.parent);
-  },
-  addMilieuFromGroup: async t => {
-    const g = await get('groups', t.dataset.id);
-    if (!g) return;
-    const id = uid();
-    await putMilieu({ id, name: g.name, parentId: t.dataset.parent, sourceGroupId: g.id, at: Date.now() });
-    await closeModal();
-    S.milieuRootId = t.dataset.parent;
-    S.subMilieuId = id;
-    S.personaId = null;
-    S.view = 'personas';
-    toast(`« ${g.name} » ajouté aux milieux`);
-    return render();
-  },
-  editMilieu: t => mMilieu(t.dataset.id || S.subMilieuId, null),
+  newMilieu: () => mMilieu(null),
+  editMilieu: t => mMilieu(t.dataset.id || S.personaGroupId),
   saveMilieu: async t => {
     const id = t.dataset.id || uid();
-    const name = document.getElementById('mName').value.trim() || 'Milieu sans nom';
-    const old = (await listMilieux()).find(m => m.id === id);
-    await putMilieu({
-      ...(old || {}), id, name,
-      parentId: (old && old.parentId) || t.dataset.parent || MILIEU_GUILDE.id,
-      at: (old && old.at) || Date.now()
-    });
+    const name = document.getElementById('mName').value.trim() || 'Groupe sans nom';
+    const old = (await listPersonaGroups()).find(m => m.id === id);
+    await putPersonaGroup({ ...(old || {}), id, name, at: (old && old.at) || Date.now() });
     await closeModal();
-    S.milieuRootId = (old && old.parentId) || t.dataset.parent || S.milieuRootId;
-    S.subMilieuId = id;
+    S.personaGroupId = id;
     S.personaId = null;
     S.view = 'personas';
-    toast('Milieu enregistré');
+    toast('Groupe enregistré');
     return render();
   },
   delMilieuAsk: async t => {
-    if (MILIEU_ROOTS.some(r => r.id === t.dataset.id)) { toast('Ce milieu ne se supprime pas'); return; }
-    if (!confirm('Supprimer ce sous-groupe ? Ses personas remontent au milieu parent.')) return;
-    await delMilieu(t.dataset.id);
-    S.subMilieuId = null;
+    const groups = await listPersonaGroups();
+    if (groups.length < 2) { toast('Il faut au moins un groupe'); return; }
+    if (!confirm('Supprimer ce groupe ? Ses personas rejoindront le premier groupe.')) return;
+    await delPersonaGroup(t.dataset.id);
+    S.personaGroupId = null;
     S.personaId = null;
-    toast('Sous-groupe supprimé');
+    toast('Groupe supprimé');
     return render();
   },
 

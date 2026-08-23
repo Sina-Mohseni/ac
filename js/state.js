@@ -12,9 +12,14 @@ export const S = {
   vzoom: 3.2,           // pixels par seconde (vertical)
   follow: true,
   laneFilter: null,
+  /* Tour Hourglass */
+  subjectId: null,      // sujet ouvert dans la salle Sujets
+  scenarioId: null,     // scénario ouvert dans la salle Scénario
+  liveScenarioId: null, // scénario retenu dans Eye ou Gates
+  liveCast: null,       // { user, ai: [] }
+  sessionId: null,      // scène en cours
   /* personas */
-  milieuRootId: null,   // milieu racine ouvert : Guilde, Hourglass ou Sphere
-  subMilieuId: null,    // sous-groupe ouvert, ou null pour « tous »
+  personaGroupId: null, // groupe de personas ouvert, ou null pour « tous »
   personaId: null,      // fiche ouverte
   sheetEdit: false      // la fiche affichée est en édition
 };
@@ -67,6 +72,36 @@ export const HOUSES = [
 ];
 
 export const houseOf = view => HOUSES.find(h => h.view === view) || HOUSES[0];
+
+/* ---------- les salles, propres à chaque maison ---------- */
+export const HALLS_BY_HOUSE = {
+  guild: ['library', 'cal', 'goals', 'vault'],
+  hourglass: ['subjects', 'scenario', 'eye', 'gates'],
+  sphere: ['library', 'cal', 'goals', 'vault']
+};
+
+/* ---------- la chaîne des sujets, dans la Tour Hourglass ----------
+   Chaque maillon dépend du précédent : un monde tient à son univers,
+   une ère à son monde, une époque à son ère, une saga à son époque.
+   L'élément, lui, se pose sur une époque et peut traverser plusieurs
+   sagas — en parallèle ou en série. */
+export const SUBJECT_KINDS = [
+  { key: 'univers', one: 'Univers', many: 'Univers', parent: null,
+    desc: "Le tout : les lois, la matière, ce qui existe." },
+  { key: 'monde', one: 'Monde', many: 'Mondes', parent: 'univers',
+    desc: "Un lieu du monde : une planète, un royaume, une cité." },
+  { key: 'ere', one: 'Ère', many: 'Ères', parent: 'monde',
+    desc: "Un grand âge de ce monde." },
+  { key: 'epoque', one: 'Époque', many: 'Époques', parent: 'ere',
+    desc: "Un temps précis dans cette ère." },
+  { key: 'saga', one: 'Saga', many: 'Sagas', parent: 'epoque',
+    desc: "Un fil d'histoires qui traverse cette époque." },
+  { key: 'element', one: 'Élément', many: 'Éléments', parent: 'epoque', multi: 'saga',
+    desc: "Personnage, lieu, objet, fait. Il tient à son époque et peut courir sur plusieurs sagas." }
+];
+
+export const subjectKind = k => SUBJECT_KINDS.find(x => x.key === k) || SUBJECT_KINDS[0];
+export const childKind = k => SUBJECT_KINDS.find(x => x.parent === k && x.key !== 'element') || null;
 export const houseByKey = key => HOUSES.find(h => h.key === key) || HOUSES[0];
 
 export const CATS = ['Univers', 'Décors', 'Personnages', 'Objets', 'Sons', 'Effets', 'Autres'];
@@ -92,29 +127,10 @@ export const ROLES = [
 export const roleOf = r => ROLES.find(x => x[0] === r) || ROLES[0];
 export const isAI = r => String(r || '').startsWith('ai');
 
-/* Les milieux rangent les personas, comme des dossiers. Trois racines
-   fixes ; Hourglass et Sphere accueillent des sous-groupes, créés de
-   toutes pièces ou repris des mondes et des catégories de jeux déjà
-   bâtis dans la Bibliothèque. */
-export const MILIEU_ROOTS = [
-  {
-    id: 'milieu-guilde', key: 'guilde', name: 'Guilde', order: 0, system: true,
-    desc: "Les personas de la guilde Anim'Connect."
-  },
-  {
-    id: 'milieu-hourglass', key: 'hourglass', name: 'Hourglass', order: 1, system: true,
-    desc: 'Les personas des mondes racontés.',
-    sourceRoot: 'root-histoires', sourceOne: 'monde', sourceMany: 'mondes des Histoires'
-  },
-  {
-    id: 'milieu-sphere', key: 'sphere', name: 'Sphere', order: 2, system: true,
-    desc: 'Les personas des univers de jeu.',
-    sourceRoot: 'root-jeux', sourceOne: 'catégorie', sourceMany: 'catégories des Jeux'
-  }
-];
-
-export const MILIEU_GUILDE = MILIEU_ROOTS[0];
-export const milieuRoot = id => MILIEU_ROOTS.find(m => m.id === id) || null;
+/* Les personas de la guilde se rangent dans des groupes libres :
+   « ceux qui y travaillent », « les membres », « le conseil »… Un seul
+   niveau, entièrement personnalisable. */
+export const GROUP_DEFAULT = { id: 'grp-membres', name: 'Membres', at: 0 };
 
 /* Gabarit d'une fiche. Les entrées marquées « ai » n'apparaissent que
    pour les personas tenus par l'IA. */

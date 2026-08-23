@@ -107,13 +107,46 @@ animconnect/
     ├── modals.js         groupe, projet, événement, élément, piste, jalon, quête, blason
     └── views/
         ├── guild.js      les trois pages d'accueil : Guilde, Hourglass, Sphere
-        ├── sheet.js      page des personas : milieux, fiches, rôles
+        ├── sheet.js      page des personas : groupes, fiches, rôles
+        ├── subjects.js   Tour Hourglass : la chaîne des sujets
+        ├── scenario.js   Tour Hourglass : la lifeline d'un sujet
+        ├── live.js       Tour Hourglass : Eye, Gates et la scène
         ├── library.js    branches de projets + page de groupe
         ├── project.js    onglets pistes, éléments, production
         ├── timeline.js   chronologie verticale
         ├── tracker.js    les quatre salles de la Guilde
         └── pages.js      expérience, musique, paramètres (apparence, fonds, IA), coffre
 ```
+
+## La Tour Hourglass
+
+Ses quatre salles, dans le footer, remplacent celles de la Guilde quand on est chez elle :
+
+### Sujets
+
+La matière de la Tour, en chaîne — chaque maillon tient au précédent :
+
+**Univers → Monde → Ère → Époque → Saga**
+
+L'**élément** — personnage, lieu, objet, fait — se pose sur une **époque**, et peut courir sur
+**plusieurs sagas** de cette époque, en parallèle ou en série. Il apparaît donc à la fois sur son époque
+et dans chacune de ses sagas. Supprimer un sujet emporte tout ce qui en dépend, scénarios compris.
+
+### Scénario
+
+On choisit un sujet, puis on écrit sa **lifeline** : une suite de moments, dans l'ordre, qu'on ajoute,
+modifie, déplace ou retire. Un sujet peut porter plusieurs scénarios.
+
+### Eye et Gates
+
+Les deux salles où l'on **vit** un scénario. **Gates** laisse choisir lequel ; **Eye** le tire au sort
+parmi ceux qui portent au moins un moment.
+
+Ensuite, la distribution : **ta figure**, puis un ou plusieurs personas **tenus par l'IA** — les deux
+puisant dans les **personas de la guilde** et dans les **éléments de la Tour**. En scène, on avance de
+moment en moment, on écrit ce qu'on fait, et les personas d'IA répondent grâce au moteur réglé dans
+**Paramètres → Intelligence artificielle**. Sans moteur, la scène reste jouable : elle garde le fil de ce
+qui est écrit, et le dit franchement.
 
 ## Les champs de choix
 
@@ -128,7 +161,7 @@ depuis une fenêtre ne détruit pas ce qui y est déjà saisi. Chaque champ gard
 l'identifiant d'origine, si bien que le code qui relève les valeurs (`document.getElementById('fGroup').value`)
 n'a pas changé.
 
-## Modèle de données (IndexedDB `GRIMOIRE_ANIMCONNECT`, version 5)
+## Modèle de données (IndexedDB `GRIMOIRE_ANIMCONNECT`, version 6)
 
 | Magasin    | Contenu | Clés utiles |
 |------------|---------|-------------|
@@ -142,7 +175,10 @@ n'a pas changé.
 | `cal`      | jalons du calendrier | `date` |
 | `goals`    | quêtes (étapes ou compteur) | — |
 | `personas` | fiches des personas, avec leur rôle, leur milieu d'origine et leurs présences | `milieuId` |
-| `milieux`  | Guilde, Hourglass, Sphere et leurs sous-groupes | `parentId` sur les sous-groupes |
+| `milieux`  | groupes de personas de la guilde | — |
+| `subjects` | univers, mondes, ères, époques, sagas et éléments | `kind`, `parentId` |
+| `scenarios`| lifelines des sujets | `subjectId` |
+| `sessions` | scènes vécues dans Eye et Gates | — |
 | `profiles` | ancien magasin des profils, vidé au premier lancement | — |
 | `kv`       | blason des trois maisons (`guild`, `house-hourglass`, `house-sphere`), persona actif, fond d'écran (`wallpaper`), réglages d'IA (`ai`) | `k` |
 
@@ -166,8 +202,8 @@ La seule limite est le quota du navigateur, lisible dans la salle Coffre.
   de la page** au centre, en capitales, puis Personas, Musique et Paramètres à droite. Il n'y a plus de
   barre de titre sous le menu. L'icône de la maison reste allumée dans les vues qui en découlent : une
   catégorie d'Histoires garde Hourglass allumé, un jeu garde Sphere.
-- **Footer** : les quatre salles de la maison où l'on se trouve — Bibliothèque, Calendrier, Quêtes,
-  Coffre. Chaque maison a les siennes : le Calendrier et les Quêtes de Hourglass ne montrent que ce qui
+- **Footer** : les quatre salles de la maison où l'on se trouve. Guilde et Sphere : Bibliothèque,
+  Calendrier, Quêtes, Coffre. Hourglass : Sujets, Scénario, Eye, Gates. Chaque maison a les siennes : le Calendrier et les Quêtes de Hourglass ne montrent que ce qui
   relève des Histoires, ceux de Sphere que les Jeux, ceux de la Guilde tout. La Bibliothèque d'une maison
   à branche ouvre directement sa branche ; celle de la Guilde ouvre les trois. Le Coffre reste commun —
   les fichiers sont un seul stock.
@@ -191,24 +227,15 @@ fiche elle-même, et il peut changer à tout moment :
 Les deux rôles d'IA ouvrent en plus, sur la fiche, les champs **Voix** et **Moteur** et les panneaux
 **Directives** et **Mémoire** — inutiles pour un persona joué par l'utilisateur.
 
-### Les milieux
+### Les groupes
 
-Les personas se rangent dans des **milieux**, trois racines fixes :
+Les personas créés dans cette page sont **les personas de la guilde**. Ils se rangent dans des **groupes
+libres**, sur un seul niveau : celles et ceux qui y travaillent, les membres, le conseil, une équipe…
+Le groupe « Membres » existe d'office ; les autres se créent, se renomment et se suppriment (leurs
+personas rejoignent alors le premier groupe).
 
-| Milieu | Contenu | Sous-groupes |
-|--------|---------|--------------|
-| **Guilde** | Les personas de la guilde Anim'Connect | créés librement |
-| **Hourglass** | Les personas des mondes racontés | créés, ou repris des **mondes des Histoires** |
-| **Sphere** | Les personas des univers de jeu | créés, ou repris des **catégories des Jeux** |
-
-Le « + » de la bande des sous-groupes ouvre un tiroir : créer un sous-groupe de toutes pièces, ou
-reprendre un monde ou une catégorie déjà bâtis dans la Bibliothèque — le sous-groupe garde alors le lien
-vers son groupe d'origine.
-
-**Un persona n'est pas enfermé dans son milieu.** Sa fiche porte un *milieu d'origine* et une liste
-« tient aussi un rôle dans » : il apparaît dans ces milieux-là aussi, marqué d'un ↗, et peut donc être
-assistant créateur ici et personnage vivant ailleurs. Supprimer un sous-groupe ne supprime personne : ses
-personas remontent au milieu parent.
+**Un persona n'est pas enfermé dans son groupe.** Sa fiche porte un *groupe* et une liste « tient aussi
+un rôle dans » : il apparaît dans ces groupes-là aussi, marqué d'un ↗.
 
 ## La fiche
 

@@ -279,18 +279,80 @@ export function collectGoalDraft() {
 
 /* ---------- blason de la guilde ---------- */
 /* ---------- milieu d'un persona ---------- */
-export async function mMilieu(id, parentId) {
-  const { listMilieux } = await import('./db.js');
-  const m = id ? (await listMilieux()).find(x => x.id === id) : null;
-  const parent = (m && m.parentId) || parentId || '';
-  modal(`<div class="hd"><h2 style="margin:0">${m ? 'Renommer le milieu' : 'Nouveau milieu'}</h2>${closeBtn}</div>
-    <div class="tiny muted">Un milieu range les personas qui vont ensemble : la guilde,
-    une troupe, l'équipe d'un projet, le monde d'une histoire…</div>
-    <label class="lbl">Nom du milieu</label>
-    <input id="mName" value="${esc(m ? m.name : '')}" placeholder="Guilde, Troupe du Nord, Équipage…">
+/* ---------- sujets de la Tour ---------- */
+export async function mSubject(id, kind, parentId) {
+  const { getSubject, listSubjects } = await import('./db.js');
+  const { subjectKind } = await import('./state.js');
+  const x = id ? await getSubject(id) : null;
+  const K = subjectKind(x ? x.kind : kind);
+  D.subject = x || { id: uid(), kind: K.key, parentId: parentId || '', name: '', desc: '', sagaIds: [], at: Date.now() };
+
+  /* Un élément peut courir sur plusieurs sagas de son époque. */
+  let sagas = [];
+  if (K.key === 'element') {
+    const epoque = D.subject.parentId;
+    sagas = await listSubjects('saga', epoque);
+  }
+
+  modal(`<div class="hd"><h2 style="margin:0">${x ? K.one : 'Nouvel ' + K.one.toLowerCase()}</h2>${closeBtn}</div>
+    <div class="tiny muted">${esc(K.desc)}</div>
+    <label class="lbl">Nom</label>
+    <input id="sjName" value="${esc(D.subject.name)}" placeholder="${esc(K.one)}…">
+    <label class="lbl">Description</label>
+    <textarea id="sjDesc" rows="4" placeholder="Ce qu'il faut en savoir…">${esc(D.subject.desc || '')}</textarea>
+    ${sagas.length ? `<label class="lbl">Sagas traversées</label>
+      <div class="chips" id="sjSagas">${sagas.map(sg =>
+        `<span class="chip${(D.subject.sagaIds || []).includes(sg.id) ? ' on' : ''}"
+          data-act="toggleSaga" data-id="${sg.id}" role="button" tabindex="0">${esc(sg.name)}</span>`).join('')}</div>
+      <div class="fnote" style="margin-top:6px">En parallèle ou en série : un élément peut appartenir
+      à plusieurs sagas de la même époque.</div>` : ''}
+    <div class="rule"></div>
+    <div class="row"><button class="btn-ember" data-act="saveSubject">Enregistrer</button></div>`);
+}
+
+/* ---------- scénario et moments ---------- */
+export async function mScenario(id, subjectId) {
+  const { getScenario } = await import('./db.js');
+  const x = id ? await getScenario(id) : null;
+  D.scenario = x || { id: uid(), subjectId, name: '', desc: '', beats: [], at: Date.now() };
+  modal(`<div class="hd"><h2 style="margin:0">${x ? 'Scénario' : 'Nouveau scénario'}</h2>${closeBtn}</div>
+    <div class="tiny muted">La lifeline d'un sujet : ce qui lui arrive, dans l'ordre.</div>
+    <label class="lbl">Titre</label>
+    <input id="scName" value="${esc(D.scenario.name)}" placeholder="La chute des braises">
+    <label class="lbl">Intention</label>
+    <textarea id="scDesc" rows="3" placeholder="Le ton, l'enjeu, ce qui est en jeu…">${esc(D.scenario.desc || '')}</textarea>
+    <div class="rule"></div>
+    <div class="row"><button class="btn-ember" data-act="saveScenario">Enregistrer</button></div>`);
+}
+
+export async function mBeat(scenarioId, index) {
+  const { getScenario } = await import('./db.js');
+  const sc = await getScenario(scenarioId);
+  if (!sc) return;
+  const i = index === undefined || index === null || index === '' ? null : +index;
+  const b = i === null ? { title: '', text: '' } : (sc.beats || [])[i] || { title: '', text: '' };
+  D.beat = { scenarioId, index: i };
+  modal(`<div class="hd"><h2 style="margin:0">${i === null ? 'Nouveau moment' : 'Moment ' + (i + 1)}</h2>${closeBtn}</div>
+    <div class="tiny muted">Une scène, une bascule, une rencontre.</div>
+    <label class="lbl">Titre</label>
+    <input id="btTitle" value="${esc(b.title)}" placeholder="La porte s'ouvre">
+    <label class="lbl">Ce qui se passe</label>
+    <textarea id="btText" rows="5" placeholder="Le lieu, l'action, ce qui bascule…">${esc(b.text || '')}</textarea>
+    <div class="rule"></div>
+    <div class="row"><button class="btn-ember" data-act="saveBeat">Enregistrer</button></div>`);
+}
+
+export async function mMilieu(id) {
+  const { listPersonaGroups } = await import('./db.js');
+  const m = id ? (await listPersonaGroups()).find(x => x.id === id) : null;
+  modal(`<div class="hd"><h2 style="margin:0">${m ? 'Renommer le groupe' : 'Nouveau groupe'}</h2>${closeBtn}</div>
+    <div class="tiny muted">Un groupe range les personas de la guilde qui vont ensemble :
+    celles et ceux qui y travaillent, les membres, le conseil, une équipe…</div>
+    <label class="lbl">Nom du groupe</label>
+    <input id="mName" value="${esc(m ? m.name : '')}" placeholder="Membres, Atelier, Conseil…">
     <div class="rule"></div>
     <div class="row"><button class="btn-ember" data-act="saveMilieu"
-      ${m ? `data-id="${m.id}"` : ''} data-parent="${esc(parent)}">Enregistrer</button></div>`);
+      ${m ? `data-id="${m.id}"` : ''}>Enregistrer</button></div>`);
 }
 
 export async function mGuild(key) {

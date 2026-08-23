@@ -6,11 +6,19 @@ import { viewProject } from './views/project.js';
 import { viewTracker } from './views/tracker.js';
 import { viewGuild, viewHourglass, viewSphere } from './views/guild.js';
 import { viewPersonas } from './views/sheet.js';
+import { viewSubjects } from './views/subjects.js';
+import { viewScenario } from './views/scenario.js';
+import { viewEye, viewGates, viewSession } from './views/live.js';
 import { viewExperience, viewVault, viewMusic, viewSettings } from './views/pages.js';
 
 const VIEWS = {
   guild: viewGuild,
   personas: viewPersonas,
+  subjects: viewSubjects,
+  scenario: viewScenario,
+  eye: viewEye,
+  gates: viewGates,
+  session: viewSession,
   hourglass: viewHourglass,
   sphere: viewSphere,
   group: viewGroup,
