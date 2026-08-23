@@ -38,19 +38,22 @@
 #hdr .hbar, #hdr .hpage { width: 100%; max-width: 1000px; margin-inline: auto; }
 #hdr .hbar { display: flex; align-items: center; gap: 8px; }
 
-#hdr .brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
+/* Titre de la page, au centre de la barre, entre maisons et outils. */
+#hdr .htitle {
   flex: 1;
-  color: var(--on-surface);
-  font-family: var(--font-sans);
-  font-size: 17px;
+  min-width: 0;
+  margin: 0 6px;
+  text-align: center;
+  font-size: 15px;
   font-weight: 500;
-  letter-spacing: .02em;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-#hdr .sigil { width: 28px; height: 28px; flex: 0 0 auto; color: var(--primary); }
+@media (max-width: 400px) { #hdr .htitle { font-size: 13px; letter-spacing: .08em; margin: 0 2px; } }
 #hdr .sub {
   font-size: 13px;
   color: var(--on-surface-var);
@@ -117,15 +120,7 @@
   background: var(--primary-container);
 }
 
-/* titre de page */
-#hdr .hpage { margin-top: 10px; padding-top: 2px; }
-#hdr .hpage h1 { font-size: 26px; color: var(--on-surface); }
-#hdr .hpage .sub { margin-top: 2px; }
-
-@media (max-width: 400px) {
-  #hdr .brand span { display: none; }
-  #hdr .hpage h1 { font-size: 22px; }
-}
+#hdr { padding-bottom: 10px; }
 
 /* ---------- contenu ---------- */
 main {
@@ -154,8 +149,11 @@ body.playing main { padding-bottom: calc(var(--foot) + var(--play) + 44px); }
   margin: 0 auto;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
 }
+/* Les salles de la maison courante, réparties sur toute la largeur. */
+.fnav-halls { flex: 1; justify-content: space-around; max-width: 460px; }
 .fnav { display: flex; gap: 4px; align-items: center; }
 
 /* chaque famille de branches garde sa teinte */

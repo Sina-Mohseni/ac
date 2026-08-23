@@ -51,6 +51,23 @@ const A = {
     return render();
   },
   back: () => goBack(),
+  /* Une salle de la maison où l'on se trouve. La Bibliothèque d'une maison
+     à branche ouvre directement cette branche. */
+  hall: async t => {
+    const H = houseByKey(S.houseKey);
+    S.trackTab = t.dataset.t;
+    if (t.dataset.t === 'library' && H.rootId) {
+      S.activeRootId = H.rootId;
+      S.branchMode = S.branchMode || 'creation';
+      S.groupId = H.rootId;
+      S.projectId = null;
+      S.view = 'group';
+      return render();
+    }
+    if (t.dataset.t === 'library') { S.activeRootId = null; S.branchMode = null; S.groupId = null; S.projectId = null; }
+    S.view = 'tracker';
+    return render();
+  },
   /* Le tiroir des personas monte par-dessus la page en cours. */
   openPersonas: () => {
     S.personaSheet = true;

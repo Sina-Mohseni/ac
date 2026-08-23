@@ -49,7 +49,7 @@ export function renown(n) {
 export async function viewHouse(key) {
   const H = houseByKey(key);
   const g = await ensureHouse(H.key);
-  setHead(H.title, g.name);
+  setHead(H.nav, `${H.title} · ${g.name}`);
   await setStage(null);
 
   const [projects, groups, tracks, elements, goals, cal, assets] = await Promise.all([
@@ -168,9 +168,7 @@ export async function viewHouse(key) {
     h += `<div class="row wrap" style="margin-bottom:18px">
       <button class="btn-sm btn-ember" data-act="newGroup" data-parent="${H.rootId}">+ ${H.key === 'hourglass' ? 'Monde' : 'Univers'}</button>
       <button class="btn-sm" data-act="openGroup" data-id="${H.rootId}">Ouvrir la branche</button>
-      <div class="sp"></div>
-      <button class="btn-sm btn-ghost" data-act="go" data-view="tracker" data-tab="cal">Calendrier</button>
-      <button class="btn-sm btn-ghost" data-act="go" data-view="tracker" data-tab="goals">Quêtes</button>
+      <button class="btn-sm btn-ghost" data-act="branchMode" data-root="${H.rootId}">Mode</button>
     </div>`;
   }
 

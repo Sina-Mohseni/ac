@@ -1,7 +1,7 @@
-import { all } from '../db.js';
+import { all, groupTreeIds } from '../db.js';
 import { app, setHead, setStage } from '../ui.js';
 import { esc, today } from '../utils.js';
-import { S } from '../state.js';
+import { S, houseByKey } from '../state.js';
 import { vaultHTML } from './pages.js';
 import { libraryHTML } from './library.js';
 
@@ -12,21 +12,29 @@ const TABS = {
   vault: ['Coffre', 'Fichiers bruts et stockage']
 };
 
+/* Les salles d'une maison ne montrent que ce qui la concerne : les jalons
+   et les quêtes de sa branche. Le Coffre reste commun — les fichiers sont
+   un seul stock. */
+export async function houseScope() {
+  const H = houseByKey(S.houseKey);
+  if (!H.rootId) return { H, ids: null };
+  const groups = await groupTreeIds(H.rootId);
+  const projects = (await all('projects')).filter(p => groups.includes(p.groupId)).map(p => p.id);
+  return { H, ids: projects };
+}
+
+export const inScope = (x, ids) => !ids || (x.projectId && ids.includes(x.projectId));
+
 export async function viewTracker() {
   const meta = TABS[S.trackTab] || TABS.library;
-  setHead(meta[0], meta[1]);
+  const H = houseByKey(S.houseKey);
+  setHead(meta[0], `${H.nav} · ${meta[1]}`);
   await setStage(null);
-  const tabs = [
-    ['library', 'Bibliothèque', '<path d="M4 5h4v14H4zM10 5h4v14h-4zM17 5l3-1 2 14-3 .6z"/>'],
-    ['cal', 'Calendrier', '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'],
-    ['goals', 'Quêtes', '<path d="M12 3l2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>'],
-    ['vault', 'Coffre', '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="3.4"/><path d="M12 4v3M12 17v3"/>']
-  ];
-  let h = `<div class="row" style="margin-bottom:10px">
-      <button class="btn-sm btn-ghost" data-act="go" data-view="guild">‹ Guilde</button></div>`;
-  h += `<div class="track-tabs" aria-label="Salles de la Guilde">` + tabs.map(t =>
-    `<button class="track-icon${S.trackTab === t[0] ? ' on' : ''}" data-act="trackTab" data-t="${t[0]}" aria-label="${t[1]}">
-      <svg viewBox="0 0 24 24">${t[2]}</svg></button>`).join('') + `</div>`;
+
+  let h = `<div class="row wrap" style="margin-bottom:12px">
+      <button class="btn-sm btn-ghost" data-act="go" data-view="${H.view}">‹ ${esc(H.nav)}</button>
+      <div class="sp"></div>
+      <span class="tiny muted">${esc(meta[1])}</span></div>`;
   h += S.trackTab === 'library' ? await libraryHTML()
     : (S.trackTab === 'cal' ? await htmlCal() : (S.trackTab === 'goals' ? await htmlGoals() : await vaultHTML()));
   app().innerHTML = h;
@@ -38,7 +46,8 @@ async function htmlCal() {
   const start = new Date(first);
   start.setDate(1 - ((first.getDay() + 6) % 7));
 
-  const items = await all('cal');
+  const { ids } = await houseScope();
+  const items = (await all('cal')).filter(x => inScope(x, ids));
   const projects = await all('projects');
   const pMap = {};
   projects.forEach(p => { pMap[p.id] = p; });
@@ -80,7 +89,9 @@ async function htmlCal() {
 }
 
 async function htmlGoals() {
-  const gs = (await all('goals')).sort((a, b) => (a.deadline || '9').localeCompare(b.deadline || '9'));
+  const { ids } = await houseScope();
+  const gs = (await all('goals')).filter(x => inScope(x, ids))
+    .sort((a, b) => (a.deadline || '9').localeCompare(b.deadline || '9'));
   const ps = await all('projects');
   const pMap = {};
   ps.forEach(p => { pMap[p.id] = p; });
