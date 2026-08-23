@@ -137,6 +137,66 @@ export async function setStage(id) {
   return refreshStage();
 }
 
+/* ---- sélecteur maison ----------------------------------------
+   Un « select » natif ouvre une liste dessinée par le système : elle
+   ne suit ni le thème ni les formes du site. On garde donc un champ
+   caché — pour que le code qui relève les valeurs ne change pas — et
+   on ouvre une liste à nous, par-dessus tout le reste.
+   -------------------------------------------------------------- */
+
+const PICKS = new Map();
+
+/* options : [{ value, label, sub }] ; act : action à jouer au choix. */
+export function pickField({ id, value, options, act, placeholder }) {
+  PICKS.set(id, { options, act });
+  const cur = options.find(o => String(o.value) === String(value === undefined ? '' : value));
+  return `<div class="pick">
+    <input type="hidden" id="${id}" value="${esc(value == null ? '' : value)}">
+    <button type="button" class="pickbtn" data-act="openPick" data-id="${id}"
+      aria-haspopup="listbox">
+      <span class="pickval${cur ? '' : ' phv'}">${esc(cur ? cur.label : (placeholder || 'Choisir…'))}</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </button></div>`;
+}
+
+export const pickOf = id => PICKS.get(id) || null;
+
+/* La liste, dessinée comme le reste du site. */
+export function openPickList(id, filter) {
+  const P = PICKS.get(id);
+  if (!P) return;
+  const field = document.getElementById(id);
+  const cur = field ? field.value : '';
+  /* Le filtre ignore la casse et les accents : « ele » trouve « Modèle ». */
+  const flat = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const q = flat(filter).trim();
+  const shown = q
+    ? P.options.filter(o => flat(o.label + ' ' + (o.sub || '')).includes(q))
+    : P.options;
+  const root = document.getElementById('pickRoot');
+  const sheet = document.getElementById('pickSheet');
+  sheet.innerHTML = `${P.options.length > 8
+    ? `<div class="picksearch"><input id="pickQ" data-input="filterPick" data-id="${id}"
+        value="${esc(filter || '')}" placeholder="Filtrer…" autocomplete="off" spellcheck="false"></div>`
+    : ''}
+    <div class="picklist" role="listbox">` +
+    (shown.length ? shown.map(o => `<button type="button" class="pickrow${String(o.value) === String(cur) ? ' on' : ''}"
+        data-act="choosePick" data-id="${id}" data-v="${esc(o.value)}" role="option">
+        <span class="pickrow-t">${esc(o.label)}${o.sub ? `<i>${esc(o.sub)}</i>` : ''}</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11"/></svg>
+      </button>`).join('')
+      : `<div class="fnote" style="padding:14px">Aucune correspondance.</div>`) +
+    `</div>`;
+  root.classList.add('on');
+  const qEl = document.getElementById('pickQ');
+  if (qEl && filter !== undefined) { qEl.focus(); qEl.setSelectionRange(qEl.value.length, qEl.value.length); }
+}
+
+export function closePickList() {
+  const root = document.getElementById('pickRoot');
+  if (root) root.classList.remove('on');
+}
+
 /* ---- fragments réutilisables ---- */
 export const stat = (v, l) =>
   `<div><div class="mono" style="font-size:22px;color:var(--ember)">${v}</div><div class="tiny muted">${l}</div></div>`;

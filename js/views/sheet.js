@@ -2,7 +2,7 @@ import {
   getPersona, putPersona, getActivePersona, listMilieux, listSubMilieux,
   personasOf, assetURL
 } from '../db.js';
-import { app, setHead, charMedallion, milieuMedallion } from '../ui.js';
+import { app, setHead, charMedallion, milieuMedallion, pickField } from '../ui.js';
 import { esc, uid } from '../utils.js';
 import { S, PERSONA as K, ROLES, roleOf, identFor, panelsFor, MILIEU_ROOTS, MILIEU_GUILDE, milieuRoot } from '../state.js';
 
@@ -103,10 +103,11 @@ export async function ficheHTML(c, edit, milieux) {
     `</div>
     <div class="fnote" style="margin-top:8px">${esc(R[2])}.</div>
 
-    <label class="lbl" for="s_milieu">Milieu d'origine</label>
-    <select id="s_milieu" data-change="setMilieu">` +
-    (milieux || []).map(m => `<option value="${m.id}"${home === m.id ? ' selected' : ''}>${esc(mName(m.id))}</option>`).join('') +
-    `</select>
+    <label class="lbl">Milieu d'origine</label>` +
+    pickField({
+      id: 's_milieu', value: home, act: 'setMilieu',
+      options: (milieux || []).map(m => ({ value: m.id, label: mName(m.id) }))
+    }) + `
 
     <label class="lbl">Tient aussi un rôle dans</label>
     <div class="chips" role="group" aria-label="Autres milieux">` +

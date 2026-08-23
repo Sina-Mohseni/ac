@@ -115,6 +115,19 @@ animconnect/
         └── pages.js      expérience, musique, paramètres (apparence, fonds, IA), coffre
 ```
 
+## Les champs de choix
+
+Un `select` natif ouvre une liste dessinée par le système : ni le thème, ni les formes, ni les couleurs
+du site ne s'y appliquent. Toutes les listes déroulantes passent donc par un **sélecteur maison**
+(`pickField()` dans `js/ui.js`) : le champ garde l'allure des autres, et la liste s'ouvre dans une feuille
+à nous — options sur deux lignes, coche sur le choix courant, filtre au-delà de huit entrées, insensible
+aux accents.
+
+La feuille de choix vit dans sa propre couche (`#pickRoot`), au-dessus des fenêtres : ouvrir une liste
+depuis une fenêtre ne détruit pas ce qui y est déjà saisi. Chaque champ garde un `input` caché portant
+l'identifiant d'origine, si bien que le code qui relève les valeurs (`document.getElementById('fGroup').value`)
+n'a pas changé.
+
 ## Modèle de données (IndexedDB `GRIMOIRE_ANIMCONNECT`, version 5)
 
 | Magasin    | Contenu | Clés utiles |
