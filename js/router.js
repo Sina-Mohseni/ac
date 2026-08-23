@@ -1,5 +1,5 @@
 import { S } from './state.js';
-import { setNav, refreshCurrents, modal } from './ui.js';
+import { setNav, refreshCurrents, renderFooter, modal } from './ui.js';
 import { get, groupPath } from './db.js';
 import { viewGroup } from './views/library.js';
 import { viewProject } from './views/project.js';
@@ -31,6 +31,7 @@ export async function render() {
   if (S.view === 'library') { S.view = 'tracker'; S.trackTab = 'library'; }
   if (S.view === 'personas' || S.view === 'profiles') { S.view = 'guild'; S.personaSheet = true; }
   setNav(S.view);
+  renderFooter();
   const fn = VIEWS[S.view] || viewGuild;
   await fn();
   /* Le tiroir des personas se redessine avec la page qui le porte. */

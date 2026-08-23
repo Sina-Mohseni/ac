@@ -1,5 +1,6 @@
 export const S = {
-  view: 'guild',        // guild | tracker | group | project | music | settings | experience | vault
+  view: 'guild',        // guild | hourglass | sphere | tracker | group | project | music | settings | experience | vault
+  houseKey: 'guild',    // maison dont on parcourt les salles
   groupId: null,
   projectId: null,
   experienceRootId: null,
@@ -44,7 +45,7 @@ export const rootInfo = id => ROOTS.find(r => r.id === id) || null;
    bannière, ses chiffres, son cercle de personas et son registre. */
 export const HOUSES = [
   {
-    key: 'guild', view: 'guild', kv: 'guild', name: 'Guilde', title: 'Guilde',
+    key: 'guild', view: 'guild', kv: 'guild', name: 'Guilde', title: 'Guilde', nav: 'Guilde',
     sub: 'Le nexus de l\'atelier', milieuId: 'milieu-guilde', rootId: null,
     motto: 'Lire, voir, entendre, vivre, interagir.',
     desc: "Atelier de création ludique : histoires, jeux et expositions. Ici se tiennent les registres, "
@@ -52,14 +53,14 @@ export const HOUSES = [
   },
   {
     key: 'hourglass', view: 'hourglass', kv: 'house-hourglass', name: 'Hourglass',
-    title: 'Tour Hourglass', sub: 'Les Histoires', milieuId: 'milieu-hourglass', rootId: 'root-histoires',
+    title: 'Tour Hourglass', nav: 'Hourglass', sub: 'Les Histoires', milieuId: 'milieu-hourglass', rootId: 'root-histoires',
     motto: 'Le temps se raconte, grain après grain.',
     desc: "La tour des récits : mondes, personnages et chronologies. On y range les histoires "
         + "linéaires, interactives, audio, vidéo et transmédias."
   },
   {
     key: 'sphere', view: 'sphere', kv: 'house-sphere', name: 'Sphere',
-    title: 'Sphère ludique', sub: 'Les Jeux', milieuId: 'milieu-sphere', rootId: 'root-jeux',
+    title: 'Sphère ludique', nav: 'Sphère', sub: 'Les Jeux', milieuId: 'milieu-sphere', rootId: 'root-jeux',
     motto: 'Tout tourne autour du jeu.',
     desc: "La sphère des jeux : plateaux, cartes, expériences numériques et grandeur nature. "
         + "On y range les univers jouables et leurs règles."

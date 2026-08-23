@@ -1,6 +1,6 @@
 import { assetURL, getOwner, listPersonas, getActivePersona, getWallpaper } from './db.js';
 import { esc, fmtT2, fmtSize } from './utils.js';
-import { S, PERSONA } from './state.js';
+import { S, PERSONA, HOUSES, houseByKey } from './state.js';
 
 export const app = () => document.getElementById('app');
 const mroot = () => document.getElementById('modalRoot');
@@ -31,27 +31,58 @@ export function closeModal() {
   });
 }
 
+/* Le titre vit dans la barre du haut, entre les maisons et les outils.
+   Le sous-titre n'a plus de ligne à lui : il devient l'infobulle. */
 export function setHead(title, sub) {
-  document.getElementById('hTitle').textContent = title;
-  document.getElementById('hSub').textContent = sub;
+  const el = document.getElementById('hTitle');
+  el.textContent = title;
+  if (sub) el.title = sub; else el.removeAttribute('title');
   document.title = `${title} · GRIMOIRE`;
 }
 
+/* ---- les salles, identiques pour les trois maisons, indépendantes ---- */
+export const HALL_ICONS = {
+  library: '<path d="M4 5h4v14H4zM10 5h4v14h-4zM17 5l3-1 2 14-3 .6z"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  goals: '<path d="M12 3l2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  vault: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="3.4"/><path d="M12 4v3M12 17v3"/>'
+};
+
+export const HALL_LABELS = {
+  library: 'Bibliothèque', cal: 'Calendrier', goals: 'Quêtes', vault: 'Coffre'
+};
+
+/* Le pied de page porte les salles de la maison où l'on se trouve. */
+export function renderFooter() {
+  const bar = document.getElementById('fbar');
+  if (!bar) return;
+  const H = houseByKey(S.houseKey);
+  const cur = S.view === 'tracker' ? S.trackTab : null;
+  bar.innerHTML = `<nav class="fnav fnav-halls" aria-label="Salles · ${H.nav}">` +
+    Object.keys(HALL_ICONS).map(k =>
+      `<button data-act="hall" data-t="${k}" class="${cur === k ? 'on' : ''}"
+         aria-label="${HALL_LABELS[k]} · ${H.nav}" title="${HALL_LABELS[k]} · ${H.nav}">
+        <svg viewBox="0 0 24 24">${HALL_ICONS[k]}</svg></button>`).join('') +
+    `</nav>`;
+}
+
 export function setNav(view) {
+  /* La maison courante suit la page ouverte. */
+  const houseView = HOUSES.find(h => h.view === view);
+  if (houseView) S.houseKey = houseView.key;
   /* La Guilde est la maison : ses quatre salles et tout ce qui en découle
      gardent l'icône d'accueil allumée. */
-  /* Les vues qui découlent d'une maison gardent son icône allumée :
-     une catégorie d'Histoires reste sous Hourglass, un jeu sous Sphere. */
+  /* Les vues qui découlent d'une maison gardent son icône allumée. */
   const byRoot = { 'root-histoires': 'hourglass', 'root-jeux': 'sphere' };
   const inner = ['library', 'tracker', 'group', 'project', 'experience', 'vault'];
   const active = inner.includes(view)
-    ? (byRoot[S.activeRootId] || 'guild')
+    ? (byRoot[S.activeRootId] || houseByKey(S.houseKey).view)
     : view;
   document.querySelectorAll('.hnav button').forEach(b => b.classList.toggle('on', b.dataset.view === active));
-  document.querySelectorAll('.fnav-tools button').forEach(b => b.classList.toggle('on', b.dataset.view === active));
+
   const persona = document.getElementById('btnCurPersona');
   if (persona) persona.classList.toggle('on', !!S.personaSheet);
-  document.querySelectorAll('.fnav-roots button').forEach(b => b.classList.toggle('on', b.dataset.root === S.activeRootId));
+
 }
 
 /* ---- fond plein écran ----------------------------------------

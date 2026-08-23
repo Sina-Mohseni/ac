@@ -148,12 +148,18 @@ La seule limite est le quota du navigateur, lisible dans la salle Coffre.
   salles, cercle des profils et personas, registre des jalons, quêtes et projets récents. Le cadre du
   blason, à gauche du nom, est la seule porte vers les images de la guilde : un tiroir mène soit à la
   fenêtre du blason, soit au fond d'écran, avec leurs retraits.
-- **Salles** : Bibliothèque, Calendrier, Quêtes et Coffre gardent leur barre d'icônes et un retour Guilde.
-- **En-tête** : les trois maisons à gauche — Guilde, Hourglass, Sphere — puis la marque ; Musique et
-  Paramètres à droite. L'icône de la maison reste allumée dans les vues qui en découlent : une catégorie
-  d'Histoires garde Hourglass allumé, un jeu garde Sphere.
-- **Footer** : Histoires, Jeux, Expo, puis Personas tout à droite — ce dernier porte le portrait du
-  persona actif.
+- **Salles** : Bibliothèque, Calendrier, Quêtes et Coffre s'ouvrent depuis le footer et gardent un retour
+  vers leur maison.
+- **En-tête**, sur une seule ligne : les trois maisons à gauche — Guilde, Hourglass, Sphere — le **titre
+  de la page** au centre, en capitales, puis Personas, Musique et Paramètres à droite. Il n'y a plus de
+  barre de titre sous le menu. L'icône de la maison reste allumée dans les vues qui en découlent : une
+  catégorie d'Histoires garde Hourglass allumé, un jeu garde Sphere.
+- **Footer** : les quatre salles de la maison où l'on se trouve — Bibliothèque, Calendrier, Quêtes,
+  Coffre. Chaque maison a les siennes : le Calendrier et les Quêtes de Hourglass ne montrent que ce qui
+  relève des Histoires, ceux de Sphere que les Jeux, ceux de la Guilde tout. La Bibliothèque d'une maison
+  à branche ouvre directement sa branche ; celle de la Guilde ouvre les trois. Le Coffre reste commun —
+  les fichiers sont un seul stock.
+
 - **Personas** : ce n'est pas une page mais un **tiroir** qui monte au clic de l'icône, par-dessus la
   page en cours. Trois bandes — les milieux, leurs sous-groupes, puis les fiches — « + » pour en ouvrir
   une nouvelle, étoile sur la fiche active, puis la fiche elle-même. Tout s'y fait sans quitter la page :
