@@ -254,10 +254,11 @@ body.playing main { padding-bottom: calc(var(--foot) + var(--play) + 44px); }
 #seek::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 50%; background: var(--primary); }
 #seek:focus-visible { outline-offset: 4px; }
 
-/* ---------- portraits actifs dans la barre inférieure ---------- */
-.fnav-current button { position: relative; overflow: hidden; }
-.fnav-current button.hasav { color: var(--acc, var(--primary)); }
-.fnav-current button .av {
+/* ---------- portrait du persona actif sur son icône ----------
+   Le bouton a changé de barre : la règle vise l'icône elle-même. */
+#btnCurPersona { position: relative; overflow: hidden; }
+#btnCurPersona.hasav { color: var(--acc, var(--primary)); }
+#btnCurPersona .av {
   position: absolute;
   inset: 3px;
   border-radius: var(--r-full);
@@ -267,14 +268,14 @@ body.playing main { padding-bottom: calc(var(--foot) + var(--play) + 44px); }
   justify-content: center;
   background: var(--surface-3);
 }
-.fnav-current button .av img { width: 100%; height: 100%; object-fit: cover; }
-.fnav-current button .av i {
+#btnCurPersona .av img { width: 100%; height: 100%; object-fit: cover; }
+#btnCurPersona .av i {
   font-style: normal;
   font-size: 15px;
   font-weight: 500;
   color: var(--acc, var(--primary));
 }
-.fnav-current button.hasav.on {
+#btnCurPersona.hasav.on {
   background: var(--primary-container);
   box-shadow: inset 0 0 0 2px var(--acc, var(--primary));
 }

@@ -81,7 +81,7 @@ export function setNav(view) {
   document.querySelectorAll('.hnav button').forEach(b => b.classList.toggle('on', b.dataset.view === active));
 
   const persona = document.getElementById('btnCurPersona');
-  if (persona) persona.classList.toggle('on', !!S.personaSheet);
+  if (persona) persona.classList.toggle('on', view === 'personas');
 
 }
 
