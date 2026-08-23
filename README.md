@@ -198,10 +198,12 @@ La seule limite est le quota du navigateur, lisible dans la salle Coffre.
   fenêtre du blason, soit au fond d'écran, avec leurs retraits.
 - **Salles** : Bibliothèque, Calendrier, Quêtes et Coffre s'ouvrent depuis le footer et gardent un retour
   vers leur maison.
-- **En-tête**, sur une seule ligne : les trois maisons à gauche — Guilde, Hourglass, Sphere — le **titre
-  de la page** au centre, en capitales, puis Personas, Musique et Paramètres à droite. Il n'y a plus de
-  barre de titre sous le menu. L'icône de la maison reste allumée dans les vues qui en découlent : une
-  catégorie d'Histoires garde Hourglass allumé, un jeu garde Sphere.
+- **En-tête**, une seule rangée de sept icônes réparties à intervalles égaux — les marges des deux bords
+  valent l'espace entre deux icônes : Guilde, Hourglass, Sphere, Personas, Coffre, Musique, Paramètres.
+  L'icône de la maison reste allumée dans les vues qui en découlent : une catégorie d'Histoires garde
+  Hourglass allumé, un jeu garde Sphere. Le Coffre, commun aux trois maisons, s'allume seul.
+- **Titre de la page** : il vit dans une barre collée au-dessus du pied de page, en capitales. Le
+  sous-titre est passé en infobulle.
 - **Footer** : les quatre salles de la maison où l'on se trouve. Guilde et Sphere : Bibliothèque,
   Calendrier, Quêtes, Coffre. Hourglass : Sujets, Scénario, Eye, Gates. Chaque maison a les siennes : le Calendrier et les Quêtes de Hourglass ne montrent que ce qui
   relève des Histoires, ceux de Sphere que les Jeux, ceux de la Guilde tout. La Bibliothèque d'une maison

@@ -23,52 +23,31 @@
   opacity: 1;
 }
 
-/* ---------- barre supérieure (top app bar) ---------- */
+/* ---------- barre supérieure (top app bar) ----------
+   Une seule rangée d'icônes, réparties à intervalles égaux : les
+   marges des deux bords valent l'espace entre deux icônes. */
 #hdr {
   position: sticky;
   top: 0;
   z-index: 40;
-  padding: calc(var(--hdr-pad) + env(safe-area-inset-top, 0)) 12px 10px;
+  padding: calc(var(--hdr-pad) + env(safe-area-inset-top, 0)) 0 var(--hdr-pad);
   background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid transparent;
   transition: border-color var(--motion), background-color var(--motion);
 }
-#hdr .hbar, #hdr .hpage { width: 100%; max-width: 1000px; margin-inline: auto; }
-#hdr .hbar { display: flex; align-items: center; gap: 8px; }
-
-/* Titre de la page, au centre de la barre, entre maisons et outils. */
-#hdr .htitle {
-  flex: 1;
-  min-width: 0;
-  margin: 0 6px;
-  text-align: center;
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--on-surface);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-@media (max-width: 400px) { #hdr .htitle { font-size: 13px; letter-spacing: .08em; margin: 0 2px; } }
-#hdr .sub {
-  font-size: 13px;
-  color: var(--on-surface-var);
-  letter-spacing: .01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+#hdr .hbar {
+  width: 100%;
+  max-width: 1000px;
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: 0;
 }
 
-/* boutons icône — pastilles Material */
-.hnav { display: flex; gap: 4px; margin: 0; overflow-x: auto; scrollbar-width: none; }
-.hnav-home, .hnav-tools { flex: 0 0 auto; }
-.hnav::-webkit-scrollbar { display: none; }
-
-.hnav button,
+#hdr .hbar button,
 .fnav button {
   position: relative;
   width: 40px;
@@ -86,7 +65,7 @@
   overflow: hidden;
   transition: color var(--motion), background-color var(--motion);
 }
-.hnav button::before,
+#hdr .hbar button::before,
 .fnav button::before {
   content: "";
   position: absolute;
@@ -96,12 +75,12 @@
   opacity: 0;
   transition: opacity var(--motion);
 }
-.hnav button:hover::before,
+#hdr .hbar button:hover::before,
 .fnav button:hover::before { opacity: var(--state-hover); }
-.hnav button:active::before,
+#hdr .hbar button:active::before,
 .fnav button:active::before { opacity: var(--state-press); }
 
-.hnav button svg,
+#hdr .hbar button svg,
 .fnav button svg {
   position: relative;
   width: 22px;
@@ -114,21 +93,45 @@
 }
 
 /* état actif : pastille tonale, l'indicateur Material */
-.hnav button.on,
+#hdr .hbar button.on,
 .fnav button.on {
   color: var(--on-primary-container);
   background: var(--primary-container);
 }
 
-#hdr { padding-bottom: 10px; }
+@media (max-width: 400px) {
+  #hdr .hbar button, .fnav button { width: 38px; flex-basis: 38px; }
+  #hdr .hbar button svg, .fnav button svg { width: 21px; height: 21px; }
+}
+
+/* ---------- barre de titre : la première ligne du pied de page ---------- */
+#pagebar {
+  padding: 9px 16px 10px;
+  margin: -10px -12px 8px;
+  border-bottom: 1px solid var(--outline-var);
+}
+#pagebar .htitle {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ---------- contenu ---------- */
 main {
-  padding: 16px 16px calc(var(--foot) + 40px);
+  padding: 16px 16px calc(var(--foot) + var(--titlebar) + 8px);
   max-width: 1000px;
   margin: 0 auto;
 }
-body.playing main { padding-bottom: calc(var(--foot) + var(--play) + 44px); }
+body.playing main { padding-bottom: calc(var(--foot) + var(--titlebar) + var(--play) + 16px); }
 
 /* ---------- barre de navigation inférieure ---------- */
 #ftr {
@@ -138,6 +141,8 @@ body.playing main { padding-bottom: calc(var(--foot) + var(--play) + 44px); }
   bottom: 0;
   z-index: 50;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0));
+  display: flex;
+  flex-direction: column;
   background: color-mix(in srgb, var(--surface-2) 92%, transparent);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
@@ -176,7 +181,7 @@ body.playing main { padding-bottom: calc(var(--foot) + var(--play) + 44px); }
   position: fixed;
   left: 12px;
   right: 12px;
-  bottom: calc(env(safe-area-inset-bottom, 0) + var(--foot) + 10px);
+  bottom: calc(env(safe-area-inset-bottom, 0) + var(--foot) + var(--titlebar) + 10px);
   z-index: 45;
   border-radius: var(--r-lg);
   overflow: hidden;

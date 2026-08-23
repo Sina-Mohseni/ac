@@ -600,7 +600,7 @@ label.lbl {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(var(--foot) + var(--play) + 32px);
+  bottom: calc(var(--foot) + var(--titlebar) + var(--play) + 24px);
   z-index: 99;
   background: var(--inverse-surface);
   border: 0;
