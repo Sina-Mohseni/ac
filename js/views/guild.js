@@ -1,6 +1,6 @@
 import {
-  all, ensureHouse, assetURL, listPersonas, getActivePersona, listMilieux,
-  childGroups, countDeep, personasOf, groupTreeIds
+  all, ensureHouse, assetURL, listPersonas, getActivePersona,
+  childGroups, countDeep, personasOf, groupTreeIds, listPersonaGroups
 } from '../db.js';
 import { app, setHead, setStage, charMedallion, mediaHTML } from '../ui.js';
 import { esc, today } from '../utils.js';
@@ -65,7 +65,7 @@ export async function viewHouse(key) {
   });
 
   const personas = await listPersonas();
-  const milieux = await listMilieux();
+  const personaGroups = await listPersonaGroups();
   const activePersona = await getActivePersona();
 
   /* ---------- bannière ---------- */
@@ -109,13 +109,13 @@ export async function viewHouse(key) {
   /* ---------- chiffres ---------- */
   const branchGroups = H.rootId ? await childGroups(H.rootId) : [];
   const branchCount = H.rootId ? await countDeep(H.rootId) : null;
-  const houseFolk = await personasOf(H.milieuId, true);
+  const houseFolk = personas;
 
   h += `<div class="gstats">` + (H.rootId
     ? `<div class="gs"><b>${branchCount.projects}</b><span>Projets</span></div>
        <div class="gs"><b>${branchGroups.length}</b><span>${H.key === 'hourglass' ? 'Mondes' : 'Univers'}</span></div>
        <div class="gs"><b>${branchCount.groups}</b><span>Dossiers</span></div>
-       <div class="gs"><b>${houseFolk.length}</b><span>Personas</span></div>`
+       <div class="gs"><b>${personas.length}</b><span>Personas</span></div>`
     : `<div class="gs"><b>${projects.length}</b><span>Projets</span></div>
        <div class="gs"><b>${goals.length}</b><span>Quêtes</span></div>
        <div class="gs"><b>${personas.length}</b><span>Membres</span></div>
@@ -172,22 +172,22 @@ export async function viewHouse(key) {
     </div>`;
   }
 
-  /* ---------- le cercle : les personas de la maison ---------- */
-  const houseMilieux = milieux.filter(m => m.id === H.milieuId || m.parentId === H.milieuId);
-  h += `<div class="ghead"><h2>Le cercle</h2>
-    <div class="hint">${houseFolk.length} persona${houseFolk.length !== 1 ? 's' : ''} ·
-    ${houseMilieux.length} milieu${houseMilieux.length !== 1 ? 'x' : ''}</div></div>
-    <div class="card" style="margin-bottom:16px">`;
-  for (const m of houseMilieux) {
-    const list = await personasOf(m.id, false);
-    if (!list.length && m.id !== H.milieuId) continue;
-    h += `<div class="frt">${esc(m.name)}</div>
-      <div class="roster" style="--acc:${PERSONA.accent}">`;
-    for (const c of list) h += await charMedallion(c, c.id === activePersona, false);
-    h += await charMedallion(null, false, true);
+  /* ---------- le cercle : les personas de la guilde, par groupe ---------- */
+  if (!H.rootId) {
+    h += `<div class="ghead"><h2>Le cercle</h2>
+      <div class="hint">${personas.length} persona${personas.length !== 1 ? 's' : ''} ·
+      ${personaGroups.length} groupe${personaGroups.length !== 1 ? 's' : ''}</div></div>
+      <div class="card" style="margin-bottom:16px">`;
+    for (const m of personaGroups) {
+      const list = await personasOf(m.id);
+      h += `<div class="frt">${esc(m.name)}</div>
+        <div class="roster" style="--acc:${PERSONA.accent}">`;
+      for (const c of list) h += await charMedallion(c, c.id === activePersona, false);
+      h += await charMedallion(null, false, true);
+      h += `</div>`;
+    }
     h += `</div>`;
   }
-  h += `</div>`;
 
   /* ---------- registre : global à la Guilde, limité à la branche ailleurs ---------- */
   const branchIds = H.rootId ? await groupTreeIds(H.rootId) : null;

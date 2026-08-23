@@ -1,19 +1,18 @@
 import {
-  getPersona, putPersona, getActivePersona, listMilieux, listSubMilieux,
-  personasOf, assetURL
+  getPersona, putPersona, getActivePersona, listPersonaGroups, personasOf, assetURL
 } from '../db.js';
 import { app, setHead, charMedallion, milieuMedallion, pickField } from '../ui.js';
 import { esc, uid } from '../utils.js';
-import { S, PERSONA as K, ROLES, roleOf, identFor, panelsFor, MILIEU_ROOTS, MILIEU_GUILDE, milieuRoot } from '../state.js';
+import { S, PERSONA as K, ROLES, roleOf, identFor, panelsFor, GROUP_DEFAULT } from '../state.js';
 
 /* Fiche en cours d'affichage ou d'édition, partagée avec actions.js */
 export const CH = { draft: null };
 
 /* ---------- fabrique d'une fiche vierge ---------- */
-export function blankChar(milieuId) {
+export function blankChar(groupId) {
   return {
     id: uid(), at: Date.now(),
-    role: 'user', milieuId: milieuId || MILIEU_GUILDE.id, alsoIn: [],
+    role: 'user', milieuId: groupId || GROUP_DEFAULT.id, alsoIn: [],
     name: '', title: '', color: K.accent,
     portraitAssetId: null, portraitKind: '',
     bgAssetId: null, bgKind: '',
@@ -55,7 +54,7 @@ function panelBody(mode, text, ph, edit, id) {
 }
 
 /* ---------- la fiche ---------- */
-export async function ficheHTML(c, edit, milieux) {
+export async function ficheHTML(c, edit, groups) {
   const acc = c.color || K.accent;
   const R = roleOf(c.role);
   const bgU = await assetURL(c.bgAssetId);
@@ -88,14 +87,9 @@ export async function ficheHTML(c, edit, milieux) {
          <div class="fkind">${esc(R[3])}</div>`)}
   </div>`;
 
-  /* rôle et milieux : réglables à tout moment, sans passer par l'édition */
-  const mName = id => {
-    const m = (milieux || []).find(x => x.id === id);
-    if (!m) return '—';
-    const par = m.parentId ? (milieux.find(x => x.id === m.parentId) || {}).name : null;
-    return par ? `${par} · ${m.name}` : m.name;
-  };
-  const home = c.milieuId || MILIEU_GUILDE.id;
+  /* rôle et groupes : réglables à tout moment, sans passer par l'édition */
+  const gName = id => (groups.find(x => x.id === id) || {}).name || '—';
+  const home = c.milieuId || GROUP_DEFAULT.id;
   h += fr('', `<div class="frt">Rôle du persona</div>
     <div class="chips" role="group" aria-label="Rôle du persona">` +
     ROLES.map(r => `<span class="chip${c.role === r[0] ? ' on' : ''}" data-act="setRole" data-r="${r[0]}"
@@ -103,20 +97,20 @@ export async function ficheHTML(c, edit, milieux) {
     `</div>
     <div class="fnote" style="margin-top:8px">${esc(R[2])}.</div>
 
-    <label class="lbl">Milieu d'origine</label>` +
+    <label class="lbl">Groupe</label>` +
     pickField({
       id: 's_milieu', value: home, act: 'setMilieu',
-      options: (milieux || []).map(m => ({ value: m.id, label: mName(m.id) }))
+      options: (groups || []).map(m => ({ value: m.id, label: m.name }))
     }) + `
 
     <label class="lbl">Tient aussi un rôle dans</label>
-    <div class="chips" role="group" aria-label="Autres milieux">` +
-    (milieux || []).filter(m => m.id !== home).map(m =>
+    <div class="chips" role="group" aria-label="Autres groupes">` +
+    (groups || []).filter(m => m.id !== home).map(m =>
       `<span class="chip${(c.alsoIn || []).includes(m.id) ? ' on' : ''}" data-act="toggleAlsoIn" data-id="${m.id}"
-        role="button" tabindex="0">${esc(mName(m.id))}</span>`).join('') +
+        role="button" tabindex="0">${esc(gName(m.id))}</span>`).join('') +
     `</div>
-    <div class="fnote" style="margin-top:8px">Un persona rangé ici peut très bien être assistant
-    créateur ou personnage vivant ailleurs : choisis les milieux où il doit apparaître.</div>`);
+    <div class="fnote" style="margin-top:8px">Un persona rangé ici peut très bien tenir un rôle
+    dans un autre groupe : choisis ceux où il doit apparaître.</div>`);
 
   /* identité secondaire : petits cadres rectangulaires */
   h += `<div class="idgrid">` + identFor(c.role).map(f => fr('idc',
@@ -172,26 +166,19 @@ export async function ficheHTML(c, edit, milieux) {
   return h;
 }
 
-/* ---------- page des personas : milieux, sous-groupes, fiches ---------- */
+/* ---------- page des personas : groupes, fiches ----------
+   Tous les personas d'ici appartiennent à la guilde ; les groupes sont
+   libres — ceux qui y travaillent, les membres, le conseil… */
 export async function viewPersonas() {
-  const milieux = await listMilieux();
-  if (!S.milieuRootId || !milieuRoot(S.milieuRootId)) S.milieuRootId = MILIEU_GUILDE.id;
-  const root = milieuRoot(S.milieuRootId);
-  const subs = await listSubMilieux(root.id);
-  if (S.subMilieuId && !subs.some(m => m.id === S.subMilieuId)) S.subMilieuId = null;
+  const groups = await listPersonaGroups();
+  if (!S.personaGroupId || !groups.some(m => m.id === S.personaGroupId)) S.personaGroupId = groups[0].id;
+  const group = groups.find(m => m.id === S.personaGroupId);
 
-  /* milieu courant : le sous-groupe choisi, sinon la racine et tout ce qu'elle contient */
-  const scopeId = S.subMilieuId || root.id;
-  const list = await personasOf(scopeId, !S.subMilieuId);
-  /* Chez lui dans ce milieu, ou invité depuis un autre ? */
-  const homeIds = [scopeId, ...(S.subMilieuId ? [] : subs.map(m => m.id))];
-  const guest = c => !homeIds.includes(c.milieuId || MILIEU_GUILDE.id);
+  const list = await personasOf(group.id);
   const activeId = await getActivePersona();
-  const scopeName = S.subMilieuId
-    ? `${root.name} · ${(subs.find(m => m.id === S.subMilieuId) || {}).name}`
-    : root.name;
+  const guest = c => (c.milieuId || GROUP_DEFAULT.id) !== group.id;
 
-  /* fiche ouverte : celle demandée, sinon l'active, sinon la première du milieu */
+  /* fiche ouverte : celle demandée, sinon l'active, sinon la première du groupe */
   let curId = S.personaId;
   if (!curId || !list.some(c => c.id === curId)) {
     curId = (list.some(c => c.id === activeId) ? activeId : (list[0] && list[0].id)) || null;
@@ -202,46 +189,35 @@ export async function viewPersonas() {
   CH.draft = cur;
 
   setHead(K.title, cur
-    ? `${cur.name || K.newName}${cur.id === activeId ? ' · actif' : ''} · ${scopeName}`
-    : `${scopeName} · ${K.sub}`);
+    ? `${cur.name || K.newName}${cur.id === activeId ? ' · actif' : ''} · ${group.name}`
+    : `${group.name} · ${K.sub}`);
 
-  /* première bande : les trois milieux */
-  let h = `<div class="frt">Milieux</div>
-    <div class="roster" aria-label="Milieux des personas">`;
-  for (const m of MILIEU_ROOTS) {
-    const n = (await personasOf(m.id, true)).length;
-    h += await milieuMedallion(m, m.id === root.id, n);
+  /* première bande : les groupes de la guilde */
+  let h = `<div class="frt">Groupes de la guilde</div>
+    <div class="roster" aria-label="Groupes de personas">`;
+  for (const m of groups) {
+    h += await milieuMedallion(m, m.id === group.id, (await personasOf(m.id)).length);
   }
-  h += `</div>
-    <div class="fnote" style="margin:-6px 0 14px">${esc(root.desc)}</div>`;
-
-  /* deuxième bande : les sous-groupes de la racine choisie */
-  {
-    h += `<div class="frt">Sous-groupes de ${esc(root.name)}</div>
-      <div class="roster" aria-label="Sous-groupes">`;
-    h += await milieuMedallion({ id: '', name: 'Tous' }, !S.subMilieuId, 0, 'all');
-    for (const m of subs) {
-      h += await milieuMedallion(m, m.id === S.subMilieuId, (await personasOf(m.id, false)).length);
-    }
-    h += await milieuMedallion(null, false, 0);
-    h += `</div>`;
-    if (S.subMilieuId) {
-      h += `<div class="row wrap" style="margin:-4px 0 12px">
-        <button class="btn-sm btn-ghost" data-act="editMilieu" data-id="${S.subMilieuId}">Renommer</button>
-        <button class="btn-sm btn-ghost btn-danger" data-act="delMilieuAsk" data-id="${S.subMilieuId}">Supprimer</button>
-      </div>`;
-    }
+  h += await milieuMedallion(null, false, 0);
+  h += `</div>`;
+  if (groups.length > 1 || group.id !== GROUP_DEFAULT.id) {
+    h += `<div class="row wrap" style="margin:-4px 0 12px">
+      <button class="btn-sm btn-ghost" data-act="editMilieu" data-id="${group.id}">Renommer</button>
+      ${groups.length > 1
+        ? `<button class="btn-sm btn-ghost btn-danger" data-act="delMilieuAsk" data-id="${group.id}">Supprimer</button>`
+        : ''}
+    </div>`;
   }
 
-  /* troisième bande : les personas de ce milieu */
-  h += `<div class="frt">Personas · ${esc(scopeName)}</div>
+  /* seconde bande : les personas de ce groupe */
+  h += `<div class="frt">Personas · ${esc(group.name)}</div>
     <div class="roster" style="--acc:${esc(K.accent)}" aria-label="Fiches des personas">`;
   for (const c of list) h += await charMedallion(c, c.id === activeId, false, guest(c));
   h += await charMedallion(null, false, true);
   h += `</div>`;
 
   if (!cur) {
-    app().innerHTML = h + `<div class="empty card"><span class="disp">Aucun persona dans ${esc(scopeName)}</span>
+    app().innerHTML = h + `<div class="empty card"><span class="disp">Aucun persona dans ${esc(group.name)}</span>
       Touche le « + » de la bande pour ouvrir une première fiche : portrait, rôle, attributs, histoire.</div>`;
     return;
   }
@@ -258,7 +234,7 @@ export async function viewPersonas() {
     <button class="btn-sm btn-ghost btn-danger" data-act="delCharAsk" data-id="${cur.id}">Supprimer</button>
   </div>`;
 
-  h += await ficheHTML(cur, S.sheetEdit, milieux);
+  h += await ficheHTML(cur, S.sheetEdit, groups);
   app().innerHTML = h;
 }
 
@@ -300,14 +276,14 @@ export async function refreshSheet() {
   if (!CH.draft) return;
   const host = document.querySelector('.fiche');
   if (!host) return viewPersonas();
-  host.outerHTML = await ficheHTML(CH.draft, S.sheetEdit, await listMilieux());
+  host.outerHTML = await ficheHTML(CH.draft, S.sheetEdit, await listPersonaGroups());
 }
 
 /* Sauvegarde du brouillon courant. */
 export async function persistDraft() {
   if (!CH.draft) return;
   CH.draft.at = CH.draft.at || Date.now();
-  CH.draft.milieuId = CH.draft.milieuId || MILIEU_GUILDE.id;
+  CH.draft.milieuId = CH.draft.milieuId || GROUP_DEFAULT.id;
   CH.draft.alsoIn = CH.draft.alsoIn || [];
   CH.draft.role = CH.draft.role || 'user';
   await putPersona(CH.draft);

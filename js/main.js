@@ -1,4 +1,4 @@
-import { openDB, ensureRootCategories, ensureHouses, ensureMilieux, migratePersonas } from './db.js';
+import { openDB, ensureRootCategories, ensureHouses, ensurePersonaGroups, migratePersonas } from './db.js';
 import { initPlayer } from './player.js';
 import { initActions } from './actions.js';
 import { render } from './router.js';
@@ -10,8 +10,8 @@ import { initTheme } from './theme.js';
     await openDB();
     await ensureRootCategories();
     await ensureHouses();
-    await ensureMilieux();
     await migratePersonas();
+    await ensurePersonaGroups();
   } catch (err) {
     console.error(err);
     app().innerHTML = `<div class="empty card"><span class="disp">Stockage inaccessible</span>

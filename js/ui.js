@@ -1,6 +1,6 @@
 import { assetURL, getOwner, listPersonas, getActivePersona, getWallpaper } from './db.js';
 import { esc, fmtT2, fmtSize } from './utils.js';
-import { S, PERSONA, HOUSES, houseByKey } from './state.js';
+import { S, PERSONA, HOUSES, houseByKey, HALLS_BY_HOUSE } from './state.js';
 
 export const app = () => document.getElementById('app');
 const mroot = () => document.getElementById('modalRoot');
@@ -45,11 +45,17 @@ export const HALL_ICONS = {
   library: '<path d="M4 5h4v14H4zM10 5h4v14h-4zM17 5l3-1 2 14-3 .6z"/>',
   cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   goals: '<path d="M12 3l2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
-  vault: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="3.4"/><path d="M12 4v3M12 17v3"/>'
+  vault: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="3.4"/><path d="M12 4v3M12 17v3"/>',
+  /* les quatre salles de la Tour Hourglass */
+  subjects: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+  scenario: '<path d="M4 6h10a4 4 0 0 1 0 8H8a4 4 0 0 0 0 8h12"/>',
+  eye: '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/>',
+  gates: '<path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-7a3 3 0 0 1 6 0v7"/><path d="M2 21h20"/>'
 };
 
 export const HALL_LABELS = {
-  library: 'Bibliothèque', cal: 'Calendrier', goals: 'Quêtes', vault: 'Coffre'
+  library: 'Bibliothèque', cal: 'Calendrier', goals: 'Quêtes', vault: 'Coffre',
+  subjects: 'Sujets', scenario: 'Scénario', eye: 'Eye', gates: 'Gates'
 };
 
 /* Le pied de page porte les salles de la maison où l'on se trouve. */
@@ -57,9 +63,11 @@ export function renderFooter() {
   const bar = document.getElementById('fbar');
   if (!bar) return;
   const H = houseByKey(S.houseKey);
-  const cur = S.view === 'tracker' ? S.trackTab : null;
+  const halls = HALLS_BY_HOUSE[H.key] || HALLS_BY_HOUSE.guild;
+  const cur = S.view === 'tracker' ? S.trackTab
+    : (halls.includes(S.view) ? S.view : (S.view === 'session' ? 'gates' : null));
   bar.innerHTML = `<nav class="fnav fnav-halls" aria-label="Salles · ${H.nav}">` +
-    Object.keys(HALL_ICONS).map(k =>
+    halls.map(k =>
       `<button data-act="hall" data-t="${k}" class="${cur === k ? 'on' : ''}"
          aria-label="${HALL_LABELS[k]} · ${H.nav}" title="${HALL_LABELS[k]} · ${H.nav}">
         <svg viewBox="0 0 24 24">${HALL_ICONS[k]}</svg></button>`).join('') +
@@ -67,14 +75,16 @@ export function renderFooter() {
 }
 
 export function setNav(view) {
-  /* La maison courante suit la page ouverte. */
+  /* La maison courante suit la page ouverte, et ses salles. */
   const houseView = HOUSES.find(h => h.view === view);
   if (houseView) S.houseKey = houseView.key;
+  else if ((HALLS_BY_HOUSE.hourglass || []).includes(view) || view === 'session') S.houseKey = 'hourglass';
   /* La Guilde est la maison : ses quatre salles et tout ce qui en découle
      gardent l'icône d'accueil allumée. */
   /* Les vues qui découlent d'une maison gardent son icône allumée. */
   const byRoot = { 'root-histoires': 'hourglass', 'root-jeux': 'sphere' };
-  const inner = ['library', 'tracker', 'group', 'project', 'experience', 'vault'];
+  const inner = ['library', 'tracker', 'group', 'project', 'experience', 'vault',
+    'subjects', 'scenario', 'eye', 'gates', 'session'];
   const active = inner.includes(view)
     ? (byRoot[S.activeRootId] || houseByKey(S.houseKey).view)
     : view;
