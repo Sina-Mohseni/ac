@@ -1,5 +1,5 @@
 import { all, get, rootForGroup, rootForProject } from '../db.js';
-import { app, setHead, setStage, stat } from '../ui.js';
+import { app, setHead, setStage, stat, pickField } from '../ui.js';
 import { fmtSize, esc } from '../utils.js';
 import { S, ROOTS, rootInfo } from '../state.js';
 import { getTheme, resolvedTheme } from '../theme.js';
@@ -90,11 +90,12 @@ function aiBlock(cfg) {
 
     <div class="rule"></div>
 
-    <label class="lbl" for="aiProvider">Fournisseur</label>
-    <select id="aiProvider" data-change="aiProvider">` +
-    Object.values(PROVIDERS).map(x =>
-      `<option value="${x.key}"${x.key === cfg.provider ? ' selected' : ''}>${esc(x.name)}</option>`).join('') +
-    `</select>
+    <label class="lbl">Fournisseur</label>` +
+    pickField({
+      id: 'aiProvider', value: cfg.provider, act: 'aiProvider',
+      options: Object.values(PROVIDERS).map(x =>
+        ({ value: x.key, label: x.name, sub: x.keyHint === '…' ? '' : x.keyHint }))
+    }) + `
     ${P.note ? `<div class="fnote" style="margin-top:6px">${esc(P.note)}</div>` : ''}
 
     ${P.custom || cfg.baseUrl ? `<label class="lbl" for="aiBase">URL de base du service</label>
@@ -115,13 +116,14 @@ function aiBlock(cfg) {
 
     <div class="rule"></div>
 
-    <label class="lbl" for="aiModel">Modèle</label>
-    <select id="aiModel" data-change="aiPickModel"${models.length ? '' : ' disabled'}>
-      <option value=""${cfg.model ? '' : ' selected'}>— choisir un modèle —</option>` +
-    models.map(m => `<option value="${esc(m.id)}"${m.id === cfg.model ? ' selected' : ''}>${esc(m.label || m.id)}</option>`).join('') +
-    (cfg.model && !models.some(m => m.id === cfg.model)
-      ? `<option value="${esc(cfg.model)}" selected>${esc(cfg.model)}</option>` : '') +
-    `</select>
+    <label class="lbl">Modèle</label>` +
+    pickField({
+      id: 'aiModel', value: cfg.model, act: 'aiPickModel', placeholder: 'Choisir un modèle…',
+      options: [{ value: '', label: '— aucun modèle —' }]
+        .concat(models.map(m => ({ value: m.id, label: m.label || m.id, sub: m.label && m.label !== m.id ? m.id : '' })))
+        .concat(cfg.model && !models.some(m => m.id === cfg.model)
+          ? [{ value: cfg.model, label: cfg.model, sub: 'saisi à la main' }] : [])
+    }) + `
     <div class="fnote" style="margin-top:6px">${listed
       ? `${models.length} modèle(s) proposés par le fournisseur pour cette clé.`
       : 'Suggestions courantes tant que la liste n\'a pas été chargée.'}</div>

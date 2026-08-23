@@ -1,5 +1,5 @@
 import { get, all, byIdx, assetURL, childGroups, groupPath, rootForGroup, isRootGroup } from './db.js';
-import { modal } from './ui.js';
+import { modal, pickField } from './ui.js';
 import { esc, uid, fmtSize, fmtT2 } from './utils.js';
 import { S, CATS, ROOTS, rootInfo } from './state.js';
 import { globalTime } from './player.js';
@@ -76,10 +76,9 @@ export async function mProject(id, groupId, requestedRootId) {
     <input id="fName" value="${esc(p.name)}" placeholder="Le Serment du Gardien">
     <label class="lbl">Type</label>
     <input id="fKind" value="${esc(p.kind || '')}" placeholder="Clip · Ciné-spectacle · Saga">
-    <label class="lbl">Rattachement</label>
-    <select id="fGroup">
-    ${flat.map(f => `<option value="${f.g.id}"${f.g.id === p.groupId ? ' selected' : ''}>${'· '.repeat(f.depth)}${esc(f.g.name)}</option>`).join('')}
-    </select>
+    <label class="lbl">Rattachement</label>` +
+    pickField({ id: 'fGroup', value: p.groupId,
+      options: flat.map(f => ({ value: f.g.id, label: `${'· '.repeat(f.depth)}${f.g.name}` })) }) + `
     <label class="lbl">Vignette</label>
     <div class="row"><button class="btn-sm" data-act="pickCover">Choisir un fichier</button>
     <span class="tiny muted">${cov ? 'définie' : 'aucune'}</span></div>
@@ -111,8 +110,9 @@ export async function mEvent(id, projectId, presetStart, presetLane) {
       <div style="flex:1"><label class="lbl">Début (s)</label><input id="eStart" type="number" step="0.25" value="${e.start}"></div>
       <div style="flex:1"><label class="lbl">Fin (s)</label><input id="eEnd" type="number" step="0.25" value="${e.end}"></div></div>
     <div class="tiny muted">Fin = début → repère instantané. Fin &gt; début → événement qui dure.</div>
-    <label class="lbl">Piste scénique</label>
-    <select id="eLane">${lanes.map(l => `<option value="${l.id}"${l.id === e.laneId ? ' selected' : ''}>${esc(l.name)}</option>`).join('')}</select>
+    <label class="lbl">Piste scénique</label>` +
+    pickField({ id: 'eLane', value: e.laneId,
+      options: lanes.map(l => ({ value: l.id, label: l.name })) }) + `
     <label class="lbl">Couleur</label>
     <input id="eColor" type="color" value="${e.color || '#6b5bd6'}" style="height:42px;padding:4px">
     <label class="lbl">Description / intention</label>
@@ -159,8 +159,9 @@ export async function mElement(id, projectId, backEvent) {
     ${img ? `<img src="${img}" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;border:1px solid var(--line)">` : ''}
     <label class="lbl">Nom</label>
     <input id="xName" value="${esc(el.name)}" placeholder="Nébula, gardienne des braises">
-    <label class="lbl">Catégorie</label>
-    <select id="xCat">${CATS.map(c => `<option${c === el.cat ? ' selected' : ''}>${c}</option>`).join('')}</select>
+    <label class="lbl">Catégorie</label>` +
+    pickField({ id: 'xCat', value: el.cat || CATS[0],
+      options: CATS.map(c => ({ value: c, label: c })) }) + `
     <label class="lbl">Description</label>
     <textarea id="xDesc" rows="4" placeholder="Apparence, rôle, matière, comportement…">${esc(el.desc || '')}</textarea>
     <label class="lbl">Fiche technique / notes</label>
@@ -208,9 +209,9 @@ export async function mCal(dateOrId, isId) {
   }
   h += `<label class="lbl">Intitulé</label>
     <input id="cTitle" value="${esc(it.title)}" placeholder="Tournage séquence 3">
-    <label class="lbl">Projet lié</label>
-    <select id="cProj"><option value="">—</option>
-    ${ps.map(p => `<option value="${p.id}"${p.id === it.projectId ? ' selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
+    <label class="lbl">Projet lié</label>` +
+    pickField({ id: 'cProj', value: it.projectId || '', placeholder: 'Aucun projet',
+      options: [{ value: '', label: 'Aucun projet' }].concat(ps.map(x => ({ value: x.id, label: x.name }))) }) + `
     <label class="lbl">Notes</label><textarea id="cNotes" rows="3">${esc(it.notes || '')}</textarea>
     <label class="lbl">Date</label><input id="cDate" type="date" value="${it.date}">
     <div class="row" style="margin-top:12px"><span class="chip${it.done ? ' on' : ''}" data-act="calDone">Fait</span></div>
@@ -251,9 +252,9 @@ export async function mGoal(id) {
   }
 
   h += `<label class="lbl">Échéance</label><input id="gDead" type="date" value="${g.deadline || ''}">
-    <label class="lbl">Projet lié</label>
-    <select id="gProj"><option value="">—</option>
-    ${ps.map(p => `<option value="${p.id}"${p.id === g.projectId ? ' selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
+    <label class="lbl">Projet lié</label>` +
+    pickField({ id: 'gProj', value: g.projectId || '', placeholder: 'Aucun projet',
+      options: [{ value: '', label: 'Aucun projet' }].concat(ps.map(x => ({ value: x.id, label: x.name }))) }) + `
     <div class="rule"></div>
     <div class="row"><button class="btn-ember" data-act="saveGoal">Enregistrer</button><div class="sp"></div>
     ${id ? `<button class="btn-sm btn-ghost btn-danger" data-act="delGoal" data-id="${g.id}">Supprimer</button>` : ''}</div>`;

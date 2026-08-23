@@ -5,7 +5,7 @@ import {
   listMilieux, listSubMilieux, putMilieu, delMilieu, setWallpaper
 } from './db.js';
 import { S, PIPE, ROOTS, rootInfo, MILIEU_ROOTS, MILIEU_GUILDE, milieuRoot, houseOf, houseByKey } from './state.js';
-import { closeModal, modal, opt } from './ui.js';
+import { closeModal, modal, opt, pickOf, openPickList, closePickList } from './ui.js';
 import { pickFiles, probeDuration, toast, uid, today, esc } from './utils.js';
 import { audio, PL, loadQueue, playIndex, seekGlobal, globalTime, stopAll, renderBand } from './player.js';
 import { render, goBack } from './router.js';
@@ -51,6 +51,23 @@ const A = {
     return render();
   },
   back: () => goBack(),
+
+  /* ---------- sélecteur maison ---------- */
+  openPick: t => openPickList(t.dataset.id),
+  closePick: () => closePickList(),
+  filterPick: t => openPickList(t.dataset.id, t.value),
+  choosePick: async t => {
+    const id = t.dataset.id;
+    const field = document.getElementById(id);
+    const P = pickOf(id);
+    if (field) field.value = t.dataset.v;
+    closePickList();
+    /* Le champ affiche la valeur choisie, même sans nouveau rendu. */
+    const btn = document.querySelector(`.pickbtn[data-id="${id}"] .pickval`);
+    const opt_ = P && P.options.find(o => String(o.value) === String(t.dataset.v));
+    if (btn && opt_) { btn.textContent = opt_.label; btn.classList.remove('phv'); }
+    if (P && P.act && A[P.act]) return A[P.act]({ value: t.dataset.v, dataset: {} });
+  },
   /* Une salle de la maison où l'on se trouve. La Bibliothèque d'une maison
      à branche ouvre directement cette branche. */
   hall: async t => {
@@ -846,6 +863,14 @@ export function initActions() {
     const fn = A[t.dataset.act];
     if (!fn) return;
     e.stopPropagation();
+    try { await fn(t, e); }
+    catch (err) { console.error(err); toast('Erreur : ' + err.message); }
+  });
+  document.addEventListener('input', async e => {
+    const t = e.target.closest('[data-input]');
+    if (!t) return;
+    const fn = A[t.dataset.input];
+    if (!fn) return;
     try { await fn(t, e); }
     catch (err) { console.error(err); toast('Erreur : ' + err.message); }
   });

@@ -707,3 +707,134 @@ label.lbl {
   overflow-wrap: anywhere;
 }
 .aiout.err { background: var(--error-container); color: var(--on-error-container); }
+
+/* ============================================================
+   SÉLECTEUR MAISON
+   Un « select » natif ouvre une liste dessinée par le système.
+   Ce champ garde l'allure des autres, et sa liste suit le thème,
+   les formes et les couleurs du site.
+   ============================================================ */
+
+.pick { position: relative; }
+.pickbtn {
+  width: 100%;
+  min-height: 48px;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  background-color: var(--surface-2);
+  color: var(--on-surface);
+  border: 1px solid var(--outline-var);
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  font-weight: 400;
+  text-align: left;
+  transition: border-color var(--motion), background-color var(--motion);
+}
+.sheet .pickbtn { background-color: var(--surface-1); }
+.pickbtn:hover { border-color: var(--outline); }
+.pickbtn:focus-visible { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.pickbtn .pickval {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pickbtn svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  stroke: var(--on-surface-var);
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- la liste ---------- */
+#pickRoot { position: fixed; inset: 0; z-index: 90; display: none; }
+#pickRoot.on { display: block; }
+#pickRoot .scrim { animation: scrimIn 140ms linear; }
+
+.picksheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 76vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface-3);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  box-shadow: var(--e4);
+  animation: rise var(--motion-emph) both;
+  padding: 10px 8px calc(14px + env(safe-area-inset-bottom, 0));
+}
+.picksheet::before {
+  content: "";
+  display: block;
+  width: 32px;
+  height: 4px;
+  margin: 0 auto 10px;
+  border-radius: var(--r-full);
+  background: var(--outline-var);
+  flex: 0 0 auto;
+}
+@media (min-width: 760px) {
+  .picksheet {
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 460px;
+    max-height: 70vh;
+    border-radius: var(--r-xl);
+    padding: 14px;
+  }
+  .picksheet::before { display: none; }
+}
+
+.picksearch { padding: 4px 6px 10px; flex: 0 0 auto; }
+.picklist { overflow-y: auto; overscroll-behavior: contain; }
+
+.pickrow {
+  width: 100%;
+  min-height: 52px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 2px;
+  background: transparent;
+  color: var(--on-surface);
+  border-radius: var(--r-sm);
+  font-size: 15px;
+  font-weight: 400;
+  text-align: left;
+}
+.pickrow:hover { background: var(--surface-4); }
+.pickrow.on { background: var(--primary-container); color: var(--on-primary-container); }
+.pickrow-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pickrow-t i {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--on-surface-var);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pickrow.on .pickrow-t i { color: var(--on-primary-container); opacity: .8; }
+.pickrow svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+.pickrow.on svg { opacity: 1; }
