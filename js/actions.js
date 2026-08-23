@@ -5,7 +5,7 @@ import {
   listMilieux, listSubMilieux, putMilieu, delMilieu, setWallpaper
 } from './db.js';
 import { S, PIPE, ROOTS, rootInfo, MILIEU_ROOTS, MILIEU_GUILDE, milieuRoot, houseOf, houseByKey } from './state.js';
-import { closeModal, modal, opt, setNav } from './ui.js';
+import { closeModal, modal, opt } from './ui.js';
 import { pickFiles, probeDuration, toast, uid, today, esc } from './utils.js';
 import { audio, PL, loadQueue, playIndex, seekGlobal, globalTime, stopAll, renderBand } from './player.js';
 import { render, goBack } from './router.js';
@@ -68,12 +68,6 @@ const A = {
     S.view = 'tracker';
     return render();
   },
-  /* Le tiroir des personas monte par-dessus la page en cours. */
-  openPersonas: () => {
-    S.personaSheet = true;
-    S.sheetEdit = false;
-    return render();
-  },
   openGroup: async t => {
     const root = await rootForGroup(t.dataset.id);
     S.activeRootId = root ? root.id : null;
@@ -113,17 +107,7 @@ const A = {
   },
   ptab: t => { S.ptab = t.dataset.t; return viewProject(); },
   trackTab: t => { S.trackTab = t.dataset.t; return viewTracker(); },
-  closeModal: async () => {
-    S.personaSheet = false;
-    await closeModal();
-    setNav(S.view);
-  },
-  /* Depuis une fenêtre ouverte par-dessus le tiroir des personas :
-     revenir au tiroir plutôt que tout fermer. */
-  backPersonas: async () => {
-    if (!S.personaSheet) return closeModal();
-    return render();
-  },
+  closeModal,
 
   /* ---------- modes des branches du footer ---------- */
   branchMode: t => branchDrawer(t.dataset.root),
@@ -586,7 +570,7 @@ const A = {
     await putPersona(c);
     CH.draft = c;
     S.personaId = c.id;
-    S.personaSheet = true;
+    S.view = 'personas';
     S.sheetEdit = true;
     S.activeRootId = null; S.branchMode = null;
     if (!(await getActivePersona())) await setActivePersona(c.id);
@@ -594,7 +578,7 @@ const A = {
   },
   pickChar: t => {
     S.personaId = t.dataset.id;
-    S.personaSheet = true;
+    S.view = 'personas';
     S.sheetEdit = false;
     S.activeRootId = null; S.branchMode = null;
     return render();
@@ -659,14 +643,14 @@ const A = {
     S.subMilieuId = null;
     S.personaId = null;
     S.sheetEdit = false;
-    S.personaSheet = true;
+    S.view = 'personas';
     return render();
   },
   pickSubMilieu: t => {
     S.subMilieuId = t.dataset.id || null;
     S.personaId = null;
     S.sheetEdit = false;
-    S.personaSheet = true;
+    S.view = 'personas';
     return render();
   },
   /* Un sous-groupe se crée de toutes pièces, ou se reprend d'un monde
@@ -679,7 +663,7 @@ const A = {
     const free = groups.filter(g => !taken.includes(g.id));
     const icon = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
     modal(`<div class="hd"><h2 style="margin:0">Sous-groupe de ${esc(root.name)}</h2><div class="sp"></div>
-      <button class="btn-sm btn-ghost" data-act="backPersonas">Retour</button></div>
+      <button class="btn-sm btn-ghost" data-act="closeModal">Fermer</button></div>
       <div class="tiny muted" style="margin-bottom:12px">${esc(root.desc)}</div>` +
       opt('newMilieuFree', `data-parent="${root.id}"`,
         icon('<path d="M12 5v14M5 12h14"/>'), 'Créer un sous-groupe',
@@ -705,7 +689,7 @@ const A = {
     S.milieuRootId = t.dataset.parent;
     S.subMilieuId = id;
     S.personaId = null;
-    S.personaSheet = true;
+    S.view = 'personas';
     toast(`« ${g.name} » ajouté aux milieux`);
     return render();
   },
@@ -723,7 +707,7 @@ const A = {
     S.milieuRootId = (old && old.parentId) || t.dataset.parent || S.milieuRootId;
     S.subMilieuId = id;
     S.personaId = null;
-    S.personaSheet = true;
+    S.view = 'personas';
     toast('Milieu enregistré');
     return render();
   },

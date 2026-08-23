@@ -1,5 +1,5 @@
 export const S = {
-  view: 'guild',        // guild | hourglass | sphere | tracker | group | project | music | settings | experience | vault
+  view: 'guild',        // guild | hourglass | sphere | personas | tracker | group | project | music | settings | experience | vault
   houseKey: 'guild',    // maison dont on parcourt les salles
   groupId: null,
   projectId: null,
@@ -12,8 +12,7 @@ export const S = {
   vzoom: 3.2,           // pixels par seconde (vertical)
   follow: true,
   laneFilter: null,
-  /* personas : un tiroir qui monte, pas une page */
-  personaSheet: false,  // le tiroir est ouvert
+  /* personas */
   milieuRootId: null,   // milieu racine ouvert : Guilde, Hourglass ou Sphere
   subMilieuId: null,    // sous-groupe ouvert, ou null pour « tous »
   personaId: null,      // fiche ouverte

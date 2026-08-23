@@ -13,9 +13,8 @@ modifiable depuis le cadre du blason. La bibliothèque garde ses trois branches 
 **Jeux** et **Expo** — avec catégories imbriquées sans limite, projets avec playlist, chronologie
 verticale, storyboard par éléments.
 
-Les **personas** forment une seule famille de fiches, réunies dans un tiroir qui monte au clic de leur
-icône : bande horizontale d'avatars, portrait, attributs en tuiles, panneaux thématiques et image de fond
-couvrant toute la fiche. Le rôle — joué par
+Les **personas** forment une seule famille de fiches, réunies sur leur propre page : bande horizontale
+d'avatars, portrait, attributs en tuiles, panneaux thématiques et image de fond couvrant toute la fiche. Le rôle — joué par
 l'utilisateur, ou tenu par l'IA — se choisit sur la fiche, une fois celle-ci créée.
 
 ## Apparence
@@ -108,7 +107,7 @@ animconnect/
     ├── modals.js         groupe, projet, événement, élément, piste, jalon, quête, blason
     └── views/
         ├── guild.js      les trois pages d'accueil : Guilde, Hourglass, Sphere
-        ├── sheet.js      tiroir des personas : milieux, fiches, rôles
+        ├── sheet.js      page des personas : milieux, fiches, rôles
         ├── library.js    branches de projets + page de groupe
         ├── project.js    onglets pistes, éléments, production
         ├── timeline.js   chronologie verticale
@@ -160,10 +159,9 @@ La seule limite est le quota du navigateur, lisible dans la salle Coffre.
   à branche ouvre directement sa branche ; celle de la Guilde ouvre les trois. Le Coffre reste commun —
   les fichiers sont un seul stock.
 
-- **Personas** : ce n'est pas une page mais un **tiroir** qui monte au clic de l'icône, par-dessus la
-  page en cours. Trois bandes — les milieux, leurs sous-groupes, puis les fiches — « + » pour en ouvrir
-  une nouvelle, étoile sur la fiche active, puis la fiche elle-même. Tout s'y fait sans quitter la page :
-  le tiroir se redessine à chaque action, et garde sa position de lecture.
+- **Personas** : une page comme les autres icônes de la barre du haut. Trois bandes — les milieux, leurs
+  sous-groupes, puis les fiches — « + » pour en ouvrir une nouvelle, étoile sur la fiche active, puis la
+  fiche elle-même. L'icône porte le portrait du persona actif.
 - **Paramètres** : apparence (thème jour / nuit) et accès à l'IA de l'utilisateur.
 
 ## Les personas

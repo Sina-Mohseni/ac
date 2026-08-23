@@ -2,7 +2,7 @@ import {
   getPersona, putPersona, getActivePersona, listMilieux, listSubMilieux,
   personasOf, assetURL
 } from '../db.js';
-import { charMedallion, milieuMedallion } from '../ui.js';
+import { app, setHead, charMedallion, milieuMedallion } from '../ui.js';
 import { esc, uid } from '../utils.js';
 import { S, PERSONA as K, ROLES, roleOf, identFor, panelsFor, MILIEU_ROOTS, MILIEU_GUILDE, milieuRoot } from '../state.js';
 
@@ -171,8 +171,8 @@ export async function ficheHTML(c, edit, milieux) {
   return h;
 }
 
-/* ---------- contenu du tiroir : milieux, sous-groupes, personas, fiche ---------- */
-export async function personasHTML() {
+/* ---------- page des personas : milieux, sous-groupes, fiches ---------- */
+export async function viewPersonas() {
   const milieux = await listMilieux();
   if (!S.milieuRootId || !milieuRoot(S.milieuRootId)) S.milieuRootId = MILIEU_GUILDE.id;
   const root = milieuRoot(S.milieuRootId);
@@ -200,15 +200,12 @@ export async function personasHTML() {
   const cur = curId ? await getPersona(curId) : null;
   CH.draft = cur;
 
-  /* en-tête du tiroir */
-  let h = `<div class="hd"><h2 style="margin:0">${K.title}</h2><div class="sp"></div>
-    <button class="btn-sm btn-ghost" data-act="closeModal">Fermer</button></div>
-    <div class="tiny muted" style="margin-bottom:14px">${cur
-      ? `${esc(cur.name || K.newName)}${cur.id === activeId ? ' · actif' : ''} · ${esc(scopeName)}`
-      : `${esc(scopeName)} · ${K.sub}`}</div>`;
+  setHead(K.title, cur
+    ? `${cur.name || K.newName}${cur.id === activeId ? ' · actif' : ''} · ${scopeName}`
+    : `${scopeName} · ${K.sub}`);
 
   /* première bande : les trois milieux */
-  h += `<div class="frt">Milieux</div>
+  let h = `<div class="frt">Milieux</div>
     <div class="roster" aria-label="Milieux des personas">`;
   for (const m of MILIEU_ROOTS) {
     const n = (await personasOf(m.id, true)).length;
@@ -243,8 +240,9 @@ export async function personasHTML() {
   h += `</div>`;
 
   if (!cur) {
-    return h + `<div class="empty"><span class="disp">Aucun persona dans ${esc(scopeName)}</span>
+    app().innerHTML = h + `<div class="empty card"><span class="disp">Aucun persona dans ${esc(scopeName)}</span>
       Touche le « + » de la bande pour ouvrir une première fiche : portrait, rôle, attributs, histoire.</div>`;
+    return;
   }
 
   /* barre d'outils de la fiche */
@@ -260,7 +258,7 @@ export async function personasHTML() {
   </div>`;
 
   h += await ficheHTML(cur, S.sheetEdit, milieux);
-  return h;
+  app().innerHTML = h;
 }
 
 /* ---------- relève des champs avant tout re-rendu ---------- */
@@ -300,7 +298,7 @@ export function collectCharDraft() {
 export async function refreshSheet() {
   if (!CH.draft) return;
   const host = document.querySelector('.fiche');
-  if (!host) return;
+  if (!host) return viewPersonas();
   host.outerHTML = await ficheHTML(CH.draft, S.sheetEdit, await listMilieux());
 }
 
